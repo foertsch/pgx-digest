@@ -29,7 +29,9 @@ from pgx_digest.pharmcat_runner import (
     PharmCATRunError,
     docker_available,
     run_pharmcat,
+    run_pharmcat_multi,
     vcf_to_bundle,
+    vcf_to_bundles,
 )
 from pgx_digest.pipeline import PipelineResult, run
 from pgx_digest.ranker import LLMRanker, rank
@@ -74,6 +76,8 @@ __all__ = [
     "rank",
     "run",
     "run_pharmcat",
+    "run_pharmcat_multi",
     "vcf_to_bundle",
+    "vcf_to_bundles",
     "select_drafter",
 ]

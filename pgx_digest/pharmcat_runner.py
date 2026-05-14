@@ -65,30 +65,16 @@ def _vcf_basename(vcf_path: Path) -> str:
     return name
 
 
-def run_pharmcat(
+def _invoke_pharmcat_pipeline(
     vcf_path: Path | str,
-    *,
-    output_dir: Path | str | None = None,
-    image: str = DEFAULT_IMAGE,
-    timeout: int = DEFAULT_TIMEOUT_S,
-) -> Path:
-    """Run the PharmCAT pipeline on a VCF and return the report JSON path.
+    output_dir: Path | str | None,
+    image: str,
+    timeout: int,
+) -> tuple[Path, str, subprocess.CompletedProcess[str]]:
+    """Run the PharmCAT Docker pipeline; return (out_path, basename, result).
 
-    Args:
-        vcf_path: Path to the input VCF (or .vcf.gz / .vcf.bgz).
-        output_dir: Where PharmCAT writes its outputs. Defaults to the
-            same directory as the input VCF.
-        image: Docker image tag for PharmCAT.
-        timeout: Subprocess timeout in seconds.
-
-    Returns:
-        Path to ``<basename>.report.json``.
-
-    Raises:
-        DockerUnavailable: docker isn't installed or daemon not running.
-        FileNotFoundError: the VCF doesn't exist.
-        PharmCATRunError: PharmCAT exited non-zero, timed out, or produced
-            no report.
+    Does not inspect the produced reports — the caller is responsible
+    for discovering and returning report paths (single vs per-sample).
     """
     vcf_path = Path(vcf_path).resolve()
     if not vcf_path.exists():
@@ -107,7 +93,6 @@ def run_pharmcat(
     out_path.mkdir(parents=True, exist_ok=True)
 
     basename = _vcf_basename(vcf_path)
-    expected_report = out_path / f"{basename}.report.json"
 
     # PharmCAT's preprocessor writes a bgzipped copy of the input
     # alongside the input file. If the input directory is read-only
@@ -153,14 +138,105 @@ def run_pharmcat(
             f"stderr (tail):\n{_tail(result.stderr, 30)}"
         )
 
-    if not expected_report.exists():
+    return out_path, basename, result
+
+
+def _discover_sample_reports(out_path: Path, basename: str) -> tuple[Path, ...]:
+    """Return per-sample ``<basename>.Sample_*.report.json`` files, sorted."""
+    return tuple(sorted(out_path.glob(f"{basename}.Sample_*.report.json")))
+
+
+def run_pharmcat(
+    vcf_path: Path | str,
+    *,
+    output_dir: Path | str | None = None,
+    image: str = DEFAULT_IMAGE,
+    timeout: int = DEFAULT_TIMEOUT_S,
+) -> Path:
+    """Run the PharmCAT pipeline on a single-sample VCF.
+
+    For multi-sample VCFs (PharmCAT's reporter splits output into
+    per-sample files), use :func:`run_pharmcat_multi` instead.
+
+    Args:
+        vcf_path: Path to the input VCF (or .vcf.gz / .vcf.bgz).
+        output_dir: Where PharmCAT writes its outputs. Defaults to the
+            same directory as the input VCF.
+        image: Docker image tag for PharmCAT.
+        timeout: Subprocess timeout in seconds.
+
+    Returns:
+        Path to ``<basename>.report.json``.
+
+    Raises:
+        DockerUnavailable: docker isn't installed or daemon not running.
+        FileNotFoundError: the VCF doesn't exist.
+        PharmCATRunError: PharmCAT exited non-zero, timed out, produced
+            no report, or produced per-sample reports (multi-sample VCF
+            — use :func:`run_pharmcat_multi`).
+    """
+    out_path, basename, result = _invoke_pharmcat_pipeline(
+        vcf_path, output_dir, image, timeout
+    )
+
+    expected_report = out_path / f"{basename}.report.json"
+    if expected_report.exists():
+        return expected_report
+
+    per_sample = _discover_sample_reports(out_path, basename)
+    if per_sample:
         raise PharmCATRunError(
-            f"PharmCAT did not produce {expected_report}. "
-            f"Inspect {out_path} for what was produced.\n"
-            f"stdout (tail):\n{_tail(result.stdout, 30)}"
+            f"multi-sample input detected: PharmCAT produced "
+            f"{len(per_sample)} per-sample report(s) for {basename}. "
+            f"Use run_pharmcat_multi() to get all reports."
         )
 
-    return expected_report
+    raise PharmCATRunError(
+        f"PharmCAT did not produce {expected_report}. "
+        f"Inspect {out_path} for what was produced.\n"
+        f"stdout (tail):\n{_tail(result.stdout, 30)}"
+    )
+
+
+def run_pharmcat_multi(
+    vcf_path: Path | str,
+    *,
+    output_dir: Path | str | None = None,
+    image: str = DEFAULT_IMAGE,
+    timeout: int = DEFAULT_TIMEOUT_S,
+) -> tuple[Path, ...]:
+    """Run the PharmCAT pipeline and return one report JSON path per sample.
+
+    PharmCAT's reporter emits ``<basename>.report.json`` for a single-
+    sample VCF and ``<basename>.Sample_X.report.json`` per sample for a
+    multi-sample VCF. This function returns whichever set was produced:
+    a 1-tuple for single-sample input, an N-tuple for an N-sample VCF.
+
+    Returns:
+        Tuple of report JSON paths, sorted by filename. Always at least
+        one entry on success.
+
+    Raises:
+        DockerUnavailable, FileNotFoundError, PharmCATRunError — see
+        :func:`run_pharmcat`.
+    """
+    out_path, basename, result = _invoke_pharmcat_pipeline(
+        vcf_path, output_dir, image, timeout
+    )
+
+    single = out_path / f"{basename}.report.json"
+    if single.exists():
+        return (single,)
+
+    per_sample = _discover_sample_reports(out_path, basename)
+    if per_sample:
+        return per_sample
+
+    raise PharmCATRunError(
+        f"PharmCAT did not produce any report.json for {basename} "
+        f"under {out_path}. Inspect {out_path} for what was produced.\n"
+        f"stdout (tail):\n{_tail(result.stdout, 30)}"
+    )
 
 
 def vcf_to_bundle(
@@ -171,7 +247,10 @@ def vcf_to_bundle(
     image: str = DEFAULT_IMAGE,
     timeout: int = DEFAULT_TIMEOUT_S,
 ) -> Bundle[PGxFinding]:
-    """One-shot: run PharmCAT on a VCF and parse the resulting Bundle."""
+    """One-shot: run PharmCAT on a single-sample VCF and parse the Bundle.
+
+    For multi-sample VCFs, use :func:`vcf_to_bundles`.
+    """
     report = run_pharmcat(
         vcf_path,
         output_dir=output_dir,
@@ -179,6 +258,31 @@ def vcf_to_bundle(
         timeout=timeout,
     )
     return parse_pharmcat_json(report, privacy_tier=privacy_tier)
+
+
+def vcf_to_bundles(
+    vcf_path: Path | str,
+    *,
+    output_dir: Path | str | None = None,
+    privacy_tier: PrivacyTier = PrivacyTier.PUBLIC,
+    image: str = DEFAULT_IMAGE,
+    timeout: int = DEFAULT_TIMEOUT_S,
+) -> tuple[Bundle[PGxFinding], ...]:
+    """One-shot: run PharmCAT on a VCF and parse one Bundle per sample.
+
+    Returns a 1-tuple for single-sample input and an N-tuple for an
+    N-sample multi-sample VCF.
+    """
+    reports = run_pharmcat_multi(
+        vcf_path,
+        output_dir=output_dir,
+        image=image,
+        timeout=timeout,
+    )
+    return tuple(
+        parse_pharmcat_json(report, privacy_tier=privacy_tier)
+        for report in reports
+    )
 
 
 def _tail(text: str, n: int) -> str:
