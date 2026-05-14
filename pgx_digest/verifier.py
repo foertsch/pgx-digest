@@ -9,10 +9,17 @@ The check is intentionally simple — pure dict lookups. Most of the
 from extracting claims from free-form prose. Here we punt that to the
 Drafter by requiring structured JSON output, which makes verification
 deterministic.
+
+There is one prose-level rule: a card's `recommendation` text may
+mention only its own gene. Cross-gene references in the prose are
+rejected. This catches the highest-stakes prose error we observed in
+eval (CYP2D6 cards naming CYP2C19 alternatives) without paying the
+cost of full claim extraction.
 """
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from pgx_digest.bundle import Bundle, PGxFinding
@@ -45,6 +52,7 @@ class Verifier:
         bundle: Bundle[PGxFinding],
     ) -> VerificationResult:
         by_gene: dict[str, PGxFinding] = {f.gene: f for f in bundle.items}
+        all_bundle_genes = set(by_gene)
         failures: list[VerificationFailure] = []
 
         for i, card in enumerate(draft.cards):
@@ -60,6 +68,26 @@ class Verifier:
                     )
                 )
                 continue
+
+            for other in all_bundle_genes - {card.gene}:
+                # Word-boundary match — gene symbols always contain
+                # digits, so the boundary is unambiguous and we avoid
+                # accidental hits on partial substrings.
+                if re.search(
+                    rf"\b{re.escape(other)}\b", card.recommendation
+                ):
+                    failures.append(
+                        VerificationFailure(
+                            card_index=i,
+                            field="recommendation",
+                            value=other,
+                            reason=(
+                                f"cross-gene reference: recommendation "
+                                f"for {card.gene} mentions other Bundle "
+                                f"gene {other}"
+                            ),
+                        )
+                    )
 
             if card.diplotype != finding.diplotype:
                 failures.append(

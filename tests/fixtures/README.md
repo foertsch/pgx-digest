@@ -4,7 +4,32 @@ Hand-built VCF fixtures for development and unit tests. **Not for clinical
 use.** These exercise the framework's input path without requiring network
 access, downloads, or PharmCAT to run.
 
-## What's here
+## PharmCAT report JSON fixtures
+
+| File | Genes | Provenance |
+|---|---|---|
+| `pharmcat_cyp2c19_minimal.json` | CYP2C19 *2/*2 PM (clopidogrel + voriconazole) | Subset of `pharmcat.example2.report.json` |
+| `pharmcat_multigene.json` | CYP2C19 *2/*2 PM, CYP2D6 *1/*3 IM, DPYD Normal, TPMT Normal | Merge of `pharmcat.example1` + `pharmcat.example2` (PharmCAT v3.1.1-7, data 2026-02-09) |
+
+The multi-gene fixture is a synthetic patient — each gene block is taken
+verbatim from one of the two public PharmCAT example reports, and the
+`drugs.CPIC Guideline Annotation` block is filtered to only annotations
+that target one of the four genes. Use it for tests that need >1 finding
+in a Bundle: ranker tests, multi-card draft tests, eval harness cases.
+
+To regenerate (e.g. after upstream PharmCAT version bump):
+
+```bash
+curl -fsSL https://pharmcat.clinpgx.org/examples/pharmcat.example.report.json  -o /tmp/ex1.json
+curl -fsSL https://pharmcat.clinpgx.org/examples/pharmcat.example2.report.json -o /tmp/ex2.json
+# Merge recipe: take ex2 as base, overwrite `genes` with
+#   {CYP2C19 from ex2, CYP2D6/TPMT/DPYD from ex1};
+# filter `drugs["CPIC Guideline Annotation"]` to entries whose
+# annotations[].phenotypes contains one of those four gene symbols;
+# json.dumps(sort_keys=True, indent=2) for deterministic diffs.
+```
+
+## VCF fixtures
 
 | File | Gene | Diplotype | Phenotype | Purpose |
 |---|---|---|---|---|
