@@ -1,0 +1,13 @@
+##fileformat=VCFv4.2
+##fileDate=20260513
+##source=pgx-digest synthetic test fixture v0.1.0
+##reference=GRCh38
+##contig=<ID=chr1,length=248956422>
+##fixture-purpose=DPYD *1/*2A heterozygote (Intermediate Metabolizer)
+##fixture-clinical-relevance=Increased risk of fluoropyrimidine (5-FU, capecitabine) toxicity
+##fixture-warning=SYNTHETIC. Coordinates approximate. Not for clinical use.
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE
+chr1	97515839	rs3918290	G	A	100	PASS	DP=30	GT:DP	0/1:30

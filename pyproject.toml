@@ -1,0 +1,27 @@
+[project]
+name = "pgx-digest"
+version = "0.1.0"
+description = "Verified pharmacogenomic narrative reports from PharmCAT JSON"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Arion Förtsch" }]
+dependencies = [
+    "anthropic>=0.40",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pgx_digest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

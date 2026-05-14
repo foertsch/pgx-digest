@@ -1,0 +1,1219 @@
+{
+  "dataVersion": "2026-02-09-10-28",
+  "drugs": {
+    "CPIC Guideline Annotation": {
+      "clopidogrel": {
+        "citations": [
+          {
+            "_sameAs": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3234301",
+            "journal": "Clinical pharmacology and therapeutics",
+            "pmid": "21716271",
+            "title": "Clinical Pharmacogenetics Implementation Consortium guidelines for cytochrome P450-2C19 (CYP2C19) genotype and clopidogrel therapy.",
+            "year": 2011
+          },
+          {
+            "_sameAs": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3748366",
+            "journal": "Clinical pharmacology and therapeutics",
+            "pmid": "23698643",
+            "title": "Clinical Pharmacogenetics Implementation Consortium guidelines for CYP2C19 genotype and clopidogrel therapy: 2013 update.",
+            "year": 2013
+          },
+          {
+            "_sameAs": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9287492",
+            "journal": "Clinical pharmacology and therapeutics",
+            "pmid": "35034351",
+            "title": "Clinical Pharmacogenetics Implementation Consortium Guideline for CYP2C19 Genotype and Clopidogrel Therapy: 2022 Update.",
+            "year": 2022
+          }
+        ],
+        "guidelines": [
+          {
+            "annotations": [
+              {
+                "activityScore": {},
+                "alternateDrugAvailable": true,
+                "classification": "Strong",
+                "dosingInformation": false,
+                "drugRecommendation": "Avoid clopidogrel if possible. Use prasugrel or ticagrelor at standard dose if no contraindication.",
+                "genotypes": [
+                  {
+                    "diplotypes": [
+                      {
+                        "activityScore": null,
+                        "allele1": {
+                          "activityValue": "n/a",
+                          "function": "No function",
+                          "gene": "CYP2C19",
+                          "name": "*2",
+                          "reference": false
+                        },
+                        "allele2": {
+                          "activityValue": "n/a",
+                          "function": "No function",
+                          "gene": "CYP2C19",
+                          "name": "*2",
+                          "reference": false
+                        },
+                        "combination": false,
+                        "diplotypeKey": {
+                          "*2": 2.0
+                        },
+                        "gene": "CYP2C19",
+                        "inferred": false,
+                        "inferredSourceDiplotypes": null,
+                        "label": "*2/*2",
+                        "lookupKey": [
+                          "Poor Metabolizer"
+                        ],
+                        "matchScore": 6,
+                        "outsideActivityScore": false,
+                        "outsideActivityScoreMismatch": null,
+                        "outsidePhenotype": false,
+                        "outsidePhenotypeMismatch": null,
+                        "phenotypes": [
+                          "Poor Metabolizer"
+                        ],
+                        "variant": null
+                      }
+                    ]
+                  }
+                ],
+                "highlightedVariants": [],
+                "implications": [
+                  "CYP2C19: Significantly reduced clopidogrel active metabolite formation; increased on-treatment platelet reactivity; increased risk for adverse cardiac and cerebrovascular events"
+                ],
+                "lookupKey": [
+                  {
+                    "CYP2C19": "Poor Metabolizer"
+                  }
+                ],
+                "messages": [],
+                "otherPrescribingGuidance": false,
+                "phenotypes": {
+                  "CYP2C19": "Poor Metabolizer"
+                },
+                "population": "CVI ACS PCI"
+              },
+              {
+                "activityScore": {},
+                "alternateDrugAvailable": true,
+                "classification": "Moderate",
+                "dosingInformation": false,
+                "drugRecommendation": "Avoid clopidogrel if possible. Use prasugrel or ticagrelor at standard dose if no contraindication.",
+                "genotypes": [
+                  {
+                    "diplotypes": [
+                      {
+                        "activityScore": null,
+                        "allele1": {
+                          "activityValue": "n/a",
+                          "function": "No function",
+                          "gene": "CYP2C19",
+                          "name": "*2",
+                          "reference": false
+                        },
+                        "allele2": {
+                          "activityValue": "n/a",
+                          "function": "No function",
+                          "gene": "CYP2C19",
+                          "name": "*2",
+                          "reference": false
+                        },
+                        "combination": false,
+                        "diplotypeKey": {
+                          "*2": 2.0
+                        },
+                        "gene": "CYP2C19",
+                        "inferred": false,
+                        "inferredSourceDiplotypes": null,
+                        "label": "*2/*2",
+                        "lookupKey": [
+                          "Poor Metabolizer"
+                        ],
+                        "matchScore": 6,
+                        "outsideActivityScore": false,
+                        "outsideActivityScoreMismatch": null,
+                        "outsidePhenotype": false,
+                        "outsidePhenotypeMismatch": null,
+                        "phenotypes": [
+                          "Poor Metabolizer"
+                        ],
+                        "variant": null
+                      }
+                    ]
+                  }
+                ],
+                "highlightedVariants": [],
+                "implications": [
+                  "CYP2C19: Significantly reduced clopidogrel active metabolite formation; increased on-treatment platelet reactivity; increased risk for adverse cardiac and cerebrovascular events"
+                ],
+                "lookupKey": [
+                  {
+                    "CYP2C19": "Poor Metabolizer"
+                  }
+                ],
+                "messages": [],
+                "otherPrescribingGuidance": false,
+                "phenotypes": {
+                  "CYP2C19": "Poor Metabolizer"
+                },
+                "population": "CVI non-ACS non-PCI"
+              },
+              {
+                "activityScore": {},
+                "alternateDrugAvailable": true,
+                "classification": "Moderate",
+                "dosingInformation": false,
+                "drugRecommendation": "Avoid clopidogrel if possible. Consider an alternative P2Y12 inhibitor at standard dose if clinically indicated and no contraindication.",
+                "genotypes": [
+                  {
+                    "diplotypes": [
+                      {
+                        "activityScore": null,
+                        "allele1": {
+                          "activityValue": "n/a",
+                          "function": "No function",
+                          "gene": "CYP2C19",
+                          "name": "*2",
+                          "reference": false
+                        },
+                        "allele2": {
+                          "activityValue": "n/a",
+                          "function": "No function",
+                          "gene": "CYP2C19",
+                          "name": "*2",
+                          "reference": false
+                        },
+                        "combination": false,
+                        "diplotypeKey": {
+                          "*2": 2.0
+                        },
+                        "gene": "CYP2C19",
+                        "inferred": false,
+                        "inferredSourceDiplotypes": null,
+                        "label": "*2/*2",
+                        "lookupKey": [
+                          "Poor Metabolizer"
+                        ],
+                        "matchScore": 6,
+                        "outsideActivityScore": false,
+                        "outsideActivityScoreMismatch": null,
+                        "outsidePhenotype": false,
+                        "outsidePhenotypeMismatch": null,
+                        "phenotypes": [
+                          "Poor Metabolizer"
+                        ],
+                        "variant": null
+                      }
+                    ]
+                  }
+                ],
+                "highlightedVariants": [],
+                "implications": [
+                  "CYP2C19: Significantly reduced clopidogrel active metabolite formation; increased on-treatment platelet reactivity; increased risk for adverse cardiac and cerebrovascular events"
+                ],
+                "lookupKey": [
+                  {
+                    "CYP2C19": "Poor Metabolizer"
+                  }
+                ],
+                "messages": [],
+                "otherPrescribingGuidance": false,
+                "phenotypes": {
+                  "CYP2C19": "Poor Metabolizer"
+                },
+                "population": "NVI"
+              }
+            ],
+            "id": "PA166104948",
+            "name": "Annotation of CPIC Guideline for clopidogrel and CYP2C19",
+            "source": "CPIC_GUIDELINE",
+            "url": "https://www.clinpgx.org/guidelineAnnotation/PA166104948",
+            "version": "2026-02-09-10-28"
+          }
+        ],
+        "id": "PA449053",
+        "messages": [],
+        "name": "clopidogrel",
+        "source": "CPIC_GUIDELINE",
+        "urls": [
+          "https://www.clinpgx.org/guidelineAnnotation/PA166104948"
+        ],
+        "variants": [],
+        "version": "2026-02-09-10-28"
+      },
+      "voriconazole": {
+        "citations": [
+          {
+            "_sameAs": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5474211",
+            "journal": "Clinical pharmacology and therapeutics",
+            "pmid": "27981572",
+            "title": "Clinical Pharmacogenetics Implementation Consortium (CPIC) Guidelines for CYP2C19 and Voriconazole Therapy.",
+            "year": 2017
+          }
+        ],
+        "guidelines": [
+          {
+            "annotations": [
+              {
+                "activityScore": {},
+                "alternateDrugAvailable": true,
+                "classification": "Moderate",
+                "dosingInformation": true,
+                "drugRecommendation": "Choose an alternative agent that is not dependent on CYP2C19 metabolism as primary therapy in lieu of voriconazole. Such agents include isavuconazole, liposomal amphotericin B, and posaconazole. In the event that voriconazole is considered to be the most appropriate agent, based on clinical advice, for a patient with poor metabolizer genotype, voriconazole should be administered at a preferably lower than standard dosage with careful therapeutic drug monitoring.",
+                "genotypes": [
+                  {
+                    "diplotypes": [
+                      {
+                        "activityScore": null,
+                        "allele1": {
+                          "activityValue": "n/a",
+                          "function": "No function",
+                          "gene": "CYP2C19",
+                          "name": "*2",
+                          "reference": false
+                        },
+                        "allele2": {
+                          "activityValue": "n/a",
+                          "function": "No function",
+                          "gene": "CYP2C19",
+                          "name": "*2",
+                          "reference": false
+                        },
+                        "combination": false,
+                        "diplotypeKey": {
+                          "*2": 2.0
+                        },
+                        "gene": "CYP2C19",
+                        "inferred": false,
+                        "inferredSourceDiplotypes": null,
+                        "label": "*2/*2",
+                        "lookupKey": [
+                          "Poor Metabolizer"
+                        ],
+                        "matchScore": 6,
+                        "outsideActivityScore": false,
+                        "outsideActivityScoreMismatch": null,
+                        "outsidePhenotype": false,
+                        "outsidePhenotypeMismatch": null,
+                        "phenotypes": [
+                          "Poor Metabolizer"
+                        ],
+                        "variant": null
+                      }
+                    ]
+                  }
+                ],
+                "highlightedVariants": [],
+                "implications": [
+                  "CYP2C19: Higher dose-adjusted trough concentrations of voriconazole and may increase probability of adverse events"
+                ],
+                "lookupKey": [
+                  {
+                    "CYP2C19": "Poor Metabolizer"
+                  }
+                ],
+                "messages": [],
+                "otherPrescribingGuidance": false,
+                "phenotypes": {
+                  "CYP2C19": "Poor Metabolizer"
+                },
+                "population": "adults"
+              },
+              {
+                "activityScore": {},
+                "alternateDrugAvailable": true,
+                "classification": "Moderate",
+                "dosingInformation": true,
+                "drugRecommendation": "Choose an alternative agent that is not dependent on CYP2C19 metabolism as primary therapy in lieu of voriconazole. Such agents include liposomal amphotericin B and posaconazole. In the event that voriconazole is considered to be the most appropriate agent, based on clinical advice, for a patient with poor metabolizer genotype, voriconazole should be administered at a preferably lower than standard dosage with careful therapeutic drug monitoring.",
+                "genotypes": [
+                  {
+                    "diplotypes": [
+                      {
+                        "activityScore": null,
+                        "allele1": {
+                          "activityValue": "n/a",
+                          "function": "No function",
+                          "gene": "CYP2C19",
+                          "name": "*2",
+                          "reference": false
+                        },
+                        "allele2": {
+                          "activityValue": "n/a",
+                          "function": "No function",
+                          "gene": "CYP2C19",
+                          "name": "*2",
+                          "reference": false
+                        },
+                        "combination": false,
+                        "diplotypeKey": {
+                          "*2": 2.0
+                        },
+                        "gene": "CYP2C19",
+                        "inferred": false,
+                        "inferredSourceDiplotypes": null,
+                        "label": "*2/*2",
+                        "lookupKey": [
+                          "Poor Metabolizer"
+                        ],
+                        "matchScore": 6,
+                        "outsideActivityScore": false,
+                        "outsideActivityScoreMismatch": null,
+                        "outsidePhenotype": false,
+                        "outsidePhenotypeMismatch": null,
+                        "phenotypes": [
+                          "Poor Metabolizer"
+                        ],
+                        "variant": null
+                      }
+                    ]
+                  }
+                ],
+                "highlightedVariants": [],
+                "implications": [
+                  "CYP2C19: Higher dose-adjusted trough concentrations of voriconazole and may increase probability of adverse events"
+                ],
+                "lookupKey": [
+                  {
+                    "CYP2C19": "Poor Metabolizer"
+                  }
+                ],
+                "messages": [],
+                "otherPrescribingGuidance": false,
+                "phenotypes": {
+                  "CYP2C19": "Poor Metabolizer"
+                },
+                "population": "pediatrics"
+              }
+            ],
+            "id": "PA166161537",
+            "name": "Annotation of CPIC Guideline for voriconazole and CYP2C19",
+            "source": "CPIC_GUIDELINE",
+            "url": "https://www.clinpgx.org/guidelineAnnotation/PA166161537",
+            "version": "2026-02-09-10-28"
+          }
+        ],
+        "id": "PA10233",
+        "messages": [],
+        "name": "voriconazole",
+        "source": "CPIC_GUIDELINE",
+        "urls": [
+          "https://www.clinpgx.org/guidelineAnnotation/PA166161537"
+        ],
+        "variants": [],
+        "version": "2026-02-09-10-28"
+      }
+    }
+  },
+  "genes": {
+    "CYP2C19": {
+      "alleleDefinitionSource": "CLINPGX",
+      "alleleDefinitionVersion": "2026-02-09-10-28",
+      "callSource": "MATCHER",
+      "chr": "chr10",
+      "effectivelyPhased": true,
+      "geneSymbol": "CYP2C19",
+      "hasUndocumentedVariations": false,
+      "matcherComponentHaplotypes": [],
+      "matcherHomozygousComponentHaplotypes": [],
+      "messages": [],
+      "phased": false,
+      "phenotypeVersion": "2026-02-09-10-28",
+      "recommendationDiplotypes": [
+        {
+          "activityScore": null,
+          "allele1": {
+            "activityValue": "n/a",
+            "function": "No function",
+            "gene": "CYP2C19",
+            "name": "*2",
+            "reference": false
+          },
+          "allele2": {
+            "activityValue": "n/a",
+            "function": "No function",
+            "gene": "CYP2C19",
+            "name": "*2",
+            "reference": false
+          },
+          "combination": false,
+          "diplotypeKey": {
+            "*2": 2.0
+          },
+          "gene": "CYP2C19",
+          "inferred": false,
+          "inferredSourceDiplotypes": null,
+          "label": "*2/*2",
+          "lookupKey": [
+            "Poor Metabolizer"
+          ],
+          "matchScore": 6,
+          "outsideActivityScore": false,
+          "outsideActivityScoreMismatch": null,
+          "outsidePhenotype": false,
+          "outsidePhenotypeMismatch": null,
+          "phenotypes": [
+            "Poor Metabolizer"
+          ],
+          "variant": null
+        }
+      ],
+      "relatedDrugs": [
+        {
+          "id": "PA166272921",
+          "name": "abrocitinib"
+        },
+        {
+          "id": "PA448385",
+          "name": "amitriptyline"
+        },
+        {
+          "id": "PA166268761",
+          "name": "belzutifan"
+        },
+        {
+          "id": "PA166153491",
+          "name": "brivaracetam"
+        },
+        {
+          "id": "PA448809",
+          "name": "carisoprodol"
+        },
+        {
+          "id": "PA449015",
+          "name": "citalopram"
+        },
+        {
+          "id": "PA10888",
+          "name": "clobazam"
+        },
+        {
+          "id": "PA449048",
+          "name": "clomipramine"
+        },
+        {
+          "id": "PA449053",
+          "name": "clopidogrel"
+        },
+        {
+          "id": "PA166110257",
+          "name": "dexlansoprazole"
+        },
+        {
+          "id": "PA449283",
+          "name": "diazepam"
+        },
+        {
+          "id": "PA449409",
+          "name": "doxepin"
+        },
+        {
+          "id": "PA10074",
+          "name": "escitalopram"
+        },
+        {
+          "id": "PA10075",
+          "name": "esomeprazole"
+        },
+        {
+          "id": "PA166153431",
+          "name": "flibanserin"
+        },
+        {
+          "id": "PA449969",
+          "name": "imipramine"
+        },
+        {
+          "id": "PA450180",
+          "name": "lansoprazole"
+        },
+        {
+          "id": "PA166272922",
+          "name": "mavacamten"
+        },
+        {
+          "id": "PA450704",
+          "name": "omeprazole"
+        },
+        {
+          "id": "PA450774",
+          "name": "pantoprazole"
+        },
+        {
+          "id": "PA451216",
+          "name": "rabeprazole"
+        },
+        {
+          "id": "PA451333",
+          "name": "sertraline"
+        },
+        {
+          "id": "PA451791",
+          "name": "trimipramine"
+        },
+        {
+          "id": "PA10233",
+          "name": "voriconazole"
+        }
+      ],
+      "sourceDiplotypes": [
+        {
+          "activityScore": null,
+          "allele1": {
+            "activityValue": "n/a",
+            "function": "No function",
+            "gene": "CYP2C19",
+            "name": "*2",
+            "reference": false
+          },
+          "allele2": {
+            "activityValue": "n/a",
+            "function": "No function",
+            "gene": "CYP2C19",
+            "name": "*2",
+            "reference": false
+          },
+          "combination": false,
+          "diplotypeKey": {
+            "*2": 2.0
+          },
+          "gene": "CYP2C19",
+          "inferred": false,
+          "inferredSourceDiplotypes": null,
+          "label": "*2/*2",
+          "lookupKey": [
+            "Poor Metabolizer"
+          ],
+          "matchScore": 6,
+          "outsideActivityScore": false,
+          "outsideActivityScoreMismatch": null,
+          "outsidePhenotype": false,
+          "outsidePhenotypeMismatch": null,
+          "phenotypes": [
+            "Poor Metabolizer"
+          ],
+          "variant": null
+        }
+      ],
+      "treatUndocumentedVariationsAsReference": false,
+      "uncalledHaplotypes": [],
+      "variants": [
+        {
+          "alleles": [
+            "*1",
+            "*4",
+            "*17"
+          ],
+          "call": "C/C",
+          "chromosome": "chr10",
+          "dbSnpId": "rs12248560",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94761900,
+          "referenceAllele": "C",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*4"
+          ],
+          "call": "A/A",
+          "chromosome": "chr10",
+          "dbSnpId": "rs28399504",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94762706,
+          "referenceAllele": "A",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*34",
+            "*40"
+          ],
+          "call": "C/C",
+          "chromosome": "chr10",
+          "dbSnpId": "rs367543002",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94762712,
+          "referenceAllele": "C",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*34",
+            "*40"
+          ],
+          "call": "T/T",
+          "chromosome": "chr10",
+          "dbSnpId": "rs367543003",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94762715,
+          "referenceAllele": "T",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*14"
+          ],
+          "call": "T/T",
+          "chromosome": "chr10",
+          "dbSnpId": "rs55752064",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94762755,
+          "referenceAllele": "T",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*15",
+            "*28",
+            "*35",
+            "*39"
+          ],
+          "call": "A/A",
+          "chromosome": "chr10",
+          "dbSnpId": "rs17882687",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94762760,
+          "referenceAllele": "A",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*29"
+          ],
+          "call": "A/A",
+          "chromosome": "chr10",
+          "dbSnpId": "rs1564656981",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94762788,
+          "referenceAllele": "A",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*19"
+          ],
+          "call": "A/A",
+          "chromosome": "chr10",
+          "dbSnpId": "rs1564657013",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94762856,
+          "referenceAllele": "A",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*30"
+          ],
+          "call": "C/C",
+          "chromosome": "chr10",
+          "dbSnpId": "rs145328984",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94775106,
+          "referenceAllele": "C",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*31"
+          ],
+          "call": "C/C",
+          "chromosome": "chr10",
+          "dbSnpId": "rs1564660997",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94775121,
+          "referenceAllele": "C",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*23"
+          ],
+          "call": "G/G",
+          "chromosome": "chr10",
+          "dbSnpId": "rs118203756",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94775160,
+          "referenceAllele": "G",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*32"
+          ],
+          "call": "A/A",
+          "chromosome": "chr10",
+          "dbSnpId": "rs1288601658",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94775185,
+          "referenceAllele": "A",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*2",
+            "*35"
+          ],
+          "call": "G/G",
+          "chromosome": "chr10",
+          "dbSnpId": "rs12769205",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94775367,
+          "referenceAllele": "A",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*8"
+          ],
+          "call": "T/T",
+          "chromosome": "chr10",
+          "dbSnpId": "rs41291556",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94775416,
+          "referenceAllele": "T",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*39"
+          ],
+          "call": "A/A",
+          "chromosome": "chr10",
+          "dbSnpId": "rs17885179",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94775423,
+          "referenceAllele": "A",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*6"
+          ],
+          "call": "G/G",
+          "chromosome": "chr10",
+          "dbSnpId": "rs72552267",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94775453,
+          "referenceAllele": "G",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*9"
+          ],
+          "call": "G/G",
+          "chromosome": "chr10",
+          "dbSnpId": "rs17884712",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94775489,
+          "referenceAllele": "G",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*2",
+            "*11"
+          ],
+          "call": "G/G",
+          "chromosome": "chr10",
+          "dbSnpId": "rs58973490",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94775507,
+          "referenceAllele": "G",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*41"
+          ],
+          "call": "A/A",
+          "chromosome": "chr10",
+          "dbSnpId": "rs57700608",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94780544,
+          "referenceAllele": "A",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*22"
+          ],
+          "call": "G/G",
+          "chromosome": "chr10",
+          "dbSnpId": "rs140278421",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94780574,
+          "referenceAllele": "G",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*33"
+          ],
+          "call": "G/G",
+          "chromosome": "chr10",
+          "dbSnpId": "rs370803989",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94780579,
+          "referenceAllele": "G",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*3"
+          ],
+          "call": "G/G",
+          "chromosome": "chr10",
+          "dbSnpId": "rs4986893",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94780653,
+          "referenceAllele": "G",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*10"
+          ],
+          "call": "C/C",
+          "chromosome": "chr10",
+          "dbSnpId": "rs6413438",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94781858,
+          "referenceAllele": "C",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*2"
+          ],
+          "call": "A/A",
+          "chromosome": "chr10",
+          "dbSnpId": "rs4244285",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94781859,
+          "referenceAllele": "G",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*26"
+          ],
+          "call": "G/G",
+          "chromosome": "chr10",
+          "dbSnpId": "rs375781227",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94781944,
+          "referenceAllele": "G",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*7"
+          ],
+          "call": "T/T",
+          "chromosome": "chr10",
+          "dbSnpId": "rs72558186",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94781999,
+          "referenceAllele": "T",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*18"
+          ],
+          "call": "G/G",
+          "chromosome": "chr10",
+          "dbSnpId": "rs138142612",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94842861,
+          "referenceAllele": "G",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*2",
+            "*3",
+            "*4",
+            "*5",
+            "*6",
+            "*7",
+            "*8",
+            "*9",
+            "*10",
+            "*11",
+            "*12",
+            "*13",
+            "*14",
+            "*15",
+            "*17",
+            "*18",
+            "*19",
+            "*22",
+            "*23",
+            "*24",
+            "*25",
+            "*26",
+            "*28",
+            "*29",
+            "*31",
+            "*32",
+            "*33",
+            "*35",
+            "*39",
+            "*40",
+            "*41"
+          ],
+          "call": "G/G",
+          "chromosome": "chr10",
+          "dbSnpId": "rs3758581",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94842866,
+          "referenceAllele": "A",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*24"
+          ],
+          "call": "G/G",
+          "chromosome": "chr10",
+          "dbSnpId": "rs118203757",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94842879,
+          "referenceAllele": "G",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*28"
+          ],
+          "call": "G/G",
+          "chromosome": "chr10",
+          "dbSnpId": "rs113934938",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94842995,
+          "referenceAllele": "G",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*13"
+          ],
+          "call": "C/C",
+          "chromosome": "chr10",
+          "dbSnpId": "rs17879685",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94849995,
+          "referenceAllele": "C",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*5"
+          ],
+          "call": "C/C",
+          "chromosome": "chr10",
+          "dbSnpId": "rs56337013",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94852738,
+          "referenceAllele": "C",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*16"
+          ],
+          "call": "C/C",
+          "chromosome": "chr10",
+          "dbSnpId": "rs192154563",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94852765,
+          "referenceAllele": "C",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*25"
+          ],
+          "call": "C/C",
+          "chromosome": "chr10",
+          "dbSnpId": "rs118203759",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94852785,
+          "referenceAllele": "C",
+          "warnings": []
+        },
+        {
+          "alleles": [
+            "*1",
+            "*12"
+          ],
+          "call": "A/A",
+          "chromosome": "chr10",
+          "dbSnpId": "rs55640102",
+          "gene": "CYP2C19",
+          "hasUndocumentedVariations": false,
+          "phaseSet": null,
+          "phased": false,
+          "position": 94852914,
+          "referenceAllele": "A",
+          "warnings": []
+        }
+      ],
+      "variantsOfInterest": []
+    }
+  },
+  "matcherMetadata": {
+    "callCyp2d": false,
+    "findCombinations": false,
+    "genomeBuild": "GRCh38.p14",
+    "inputFilename": "pharmcat.example2.vcf",
+    "namedAlleleMatcherVersion": "2.0.0",
+    "sampleId": "Sample_2",
+    "sampleProps": null,
+    "timestamp": "2026-02-09T21:20:37.922Z",
+    "topCandidatesOnly": true
+  },
+  "messages": [],
+  "pharmcatVersion": "v3.1.1-7-g1b371646",
+  "timestamp": "2026-02-09T21:20:39.191Z",
+  "title": "pgx-digest fixture (subset of pharmcat.example2)",
+  "unannotatedGeneCalls": []
+}

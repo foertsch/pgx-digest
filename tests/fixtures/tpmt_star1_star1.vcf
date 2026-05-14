@@ -1,0 +1,14 @@
+##fileformat=VCFv4.2
+##fileDate=20260513
+##source=pgx-digest synthetic test fixture v0.1.0
+##reference=GRCh38
+##contig=<ID=chr6,length=170805979>
+##fixture-purpose=TPMT *1/*1 wild-type (Normal Metabolizer)
+##fixture-clinical-relevance=No actionable thiopurine dosing changes
+##fixture-warning=SYNTHETIC. Coordinates approximate. Not for clinical use.
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE
+chr6	18130687	rs1800460	G	A	100	PASS	DP=30	GT:DP	0/0:30
+chr6	18138997	rs1142345	A	G	100	PASS	DP=30	GT:DP	0/0:30
