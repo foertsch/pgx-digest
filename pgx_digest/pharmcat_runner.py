@@ -126,6 +126,7 @@ def run_pharmcat(
         f"{out_path}:/data",
         image,
         "pharmcat_pipeline",
+        "-reporterJson",  # default Reporter output is HTML; opt into JSON
         "-o",
         "/data",
         f"/data/{vcf_path.name}",
