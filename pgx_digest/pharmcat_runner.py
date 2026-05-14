@@ -109,19 +109,26 @@ def run_pharmcat(
     basename = _vcf_basename(vcf_path)
     expected_report = out_path / f"{basename}.report.json"
 
+    # PharmCAT's preprocessor writes a bgzipped copy of the input
+    # alongside the input file. If the input directory is read-only
+    # (true in CI sandboxes and when input lives in a non-writable
+    # location), the preprocessor fails. Copy the VCF into the output
+    # directory and mount only that — single read-write mount.
+    staged_vcf = out_path / vcf_path.name
+    if staged_vcf.resolve() != vcf_path.resolve():
+        shutil.copy2(vcf_path, staged_vcf)
+
     cmd = [
         "docker",
         "run",
         "--rm",
         "-v",
-        f"{vcf_path.parent}:/data/input:ro",
-        "-v",
-        f"{out_path}:/data/output",
+        f"{out_path}:/data",
         image,
         "pharmcat_pipeline",
         "-o",
-        "/data/output",
-        f"/data/input/{vcf_path.name}",
+        "/data",
+        f"/data/{vcf_path.name}",
     ]
 
     try:
