@@ -19,12 +19,21 @@ cross-gene references (e.g. a CYP2D6 card's prose introducing a
 gene the source text never mentioned) are rejected. This is the
 narrowest definition of a "cross-gene hallucination" — the source
 text is the ground truth for which other genes may appear.
+
+Optional citation grounding: when constructed with a `retriever`
+(typically a `PubMedRetriever` indexed over the Bundle's cited PMIDs),
+each card's `cited_pmids` is additionally checked at semantic level
+— is the card's recommendation similar enough to the abstract? A
+similarity below `citation_grounding_threshold` is flagged. This
+turns PMID citations from "the integer is in the Bundle" into "the
+prose is plausibly supported by what the cited paper actually says."
 """
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Any
 
 from pgx_digest.bundle import Bundle, PGxFinding
 from pgx_digest.drafter import Draft
@@ -48,7 +57,26 @@ class VerificationResult:
 
 
 class Verifier:
-    """Typed containment verifier."""
+    """Typed containment verifier with optional citation grounding."""
+
+    def __init__(
+        self,
+        retriever: Any | None = None,
+        citation_grounding_threshold: float = 0.35,
+    ) -> None:
+        """
+        retriever: when provided, each card's cited PMIDs are
+            additionally checked at semantic-similarity level against
+            their abstract (intended use: a PubMedRetriever indexed
+            over the Bundle's PMIDs).
+        citation_grounding_threshold: cosine similarity below which a
+            (card, cited PMID) pair is flagged as ungrounded. The
+            BGE-small embeddings used by `LocalEmbedder` typically score
+            unrelated medical text around 0.2-0.3 and related text
+            around 0.4-0.7; 0.35 is a conservative middle.
+        """
+        self.retriever = retriever
+        self.citation_grounding_threshold = citation_grounding_threshold
 
     def verify(
         self,
@@ -160,6 +188,35 @@ class Verifier:
                             reason=(
                                 f"PMID {pmid} not in DrugRec.pmids for "
                                 f"{card.gene}/{card.drug}"
+                            ),
+                        )
+                    )
+                    continue
+                # Optional semantic-grounding check against the abstract.
+                if self.retriever is None:
+                    continue
+                abstract_item = self.retriever.get_by_metadata("pmid", pmid)
+                if abstract_item is None:
+                    # PMID not in the retriever's index (e.g. PubMed
+                    # eutils returned no abstract for a retracted /
+                    # missing record). Don't fail — record this as a
+                    # soft signal via a no-op so the rest of the
+                    # verification proceeds.
+                    continue
+                sim = self.retriever.similarity(
+                    card.recommendation, abstract_item
+                )
+                if sim < self.citation_grounding_threshold:
+                    failures.append(
+                        VerificationFailure(
+                            card_index=i,
+                            field="cited_pmids",
+                            value=str(pmid),
+                            reason=(
+                                f"citation grounding similarity "
+                                f"{sim:.3f} < threshold "
+                                f"{self.citation_grounding_threshold} "
+                                f"for PMID {pmid}"
                             ),
                         )
                     )

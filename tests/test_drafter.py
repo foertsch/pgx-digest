@@ -680,6 +680,63 @@ def test_per_card_default_mode_is_batch() -> None:
     assert drafter.mode == "batch"
 
 
+# ---------------------------------------------------------------------------
+# CPIC retriever integration — the Drafter injects retrieved context
+# into the user message when a retriever is configured.
+# ---------------------------------------------------------------------------
+
+
+class _StubCPICRetriever:
+    """Fake Retriever that returns a fixed snippet for every query."""
+
+    def __init__(self, snippet_text: str = "fake CPIC snippet") -> None:
+        self.snippet_text = snippet_text
+        self.queries: list[str] = []
+
+    def retrieve(self, query: str, *, k: int = 5):
+        from pgx_digest.retriever import RetrievedItem
+
+        self.queries.append(query)
+        return [
+            RetrievedItem(
+                text=self.snippet_text,
+                score=0.42,
+                metadata={
+                    "drug": "clopidogrel",
+                    "phenotypes": {"CYP2C19": "Intermediate Metabolizer"},
+                },
+            )
+        ]
+
+
+def test_llm_drafter_injects_cpic_context_when_retriever_set() -> None:
+    client = _FakeAnthropicClient(_VALID_CARDS_JSON)
+    retr = _StubCPICRetriever(snippet_text="canonical CPIC text here")
+    drafter = LLMDrafter(
+        provider=AnthropicProvider(client=client),
+        retriever=retr,
+    )
+    drafter.draft(_bundle())
+
+    [call] = client.messages.calls
+    user_msg = call["messages"][0]["content"]
+    # CPIC retrieved snippet shows up in the prompt.
+    assert "canonical CPIC text here" in user_msg
+    # And the bundle JSON is still there.
+    assert "Bundle (JSON):" in user_msg
+    # Retriever was queried (at least once for the one CYP2C19/clopidogrel pair).
+    assert retr.queries
+
+
+def test_llm_drafter_omits_cpic_block_when_no_retriever() -> None:
+    client = _FakeAnthropicClient(_VALID_CARDS_JSON)
+    drafter = LLMDrafter(provider=AnthropicProvider(client=client))
+    drafter.draft(_bundle())
+    [call] = client.messages.calls
+    user_msg = call["messages"][0]["content"]
+    assert "Authoritative CPIC reference" not in user_msg
+
+
 def test_select_drafter_picks_ollama_for_local_only() -> None:
     drafter = select_drafter(_bundle(tier=PrivacyTier.LOCAL_ONLY))
     assert isinstance(drafter, OllamaDrafter)

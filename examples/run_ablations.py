@@ -75,6 +75,13 @@ def main() -> int:
     parser.add_argument("--skip-triage", action="store_true")
     parser.add_argument("--skip-drafter-mode", action="store_true")
     parser.add_argument("--skip-triage-classifier", action="store_true")
+    parser.add_argument("--skip-rag", action="store_true")
+    parser.add_argument(
+        "--rag-cache-dir",
+        type=Path,
+        default=REPO_ROOT / "rag_cache",
+        help="Where to cache PubMed abstracts + CPIC API responses.",
+    )
     parser.add_argument(
         "--only-verifier",
         action="store_true",
@@ -123,6 +130,7 @@ def main() -> int:
     include_triage_classifier = not (
         args.skip_triage_classifier or args.only_verifier
     )
+    include_rag = not (args.skip_rag or args.only_verifier)
 
     providers = [
         AnthropicProvider(model=args.haiku_model),
@@ -141,6 +149,8 @@ def main() -> int:
         include_triage_ablation=include_triage,
         include_drafter_mode_ablation=include_drafter_mode,
         include_triage_classifier_ablation=include_triage_classifier,
+        include_rag_ablation=include_rag,
+        rag_cache_dir=args.rag_cache_dir,
     )
 
     print()
