@@ -35,6 +35,9 @@ from pgx_digest.drafter import (
     TriagingDrafter,
 )
 from pgx_digest.eval.adversarial import AdversarialDrafter, AdversarialMode
+from pgx_digest.pharmcat import parse_pharmcat_json as _parse_for_ablation
+from pgx_digest.triage import Triage, TriageDecision
+from pgx_digest.triage_ml import LearnedTriage
 from pgx_digest.eval.cases import EvalCase, load_cases
 from pgx_digest.eval.judge import Judge
 from pgx_digest.eval.report import (
@@ -314,6 +317,165 @@ def ablation_drafter_mode(
     return rows_t
 
 
+# ---------------------------------------------------------------------------
+# (f) Rule-based vs learned Triage — decision-level comparison
+# ---------------------------------------------------------------------------
+
+
+def ablation_triage_classifier(
+    cases: tuple[EvalCase, ...],
+    *,
+    fixtures_dir: Path,
+    classifier_path: Path | None = None,
+    learned_triage: LearnedTriage | None = None,
+    out_md: Path | None = None,
+) -> tuple[AblationRow, ...]:
+    """Decision-level comparison: rule-based Triage vs LearnedTriage.
+
+    Walks every `(PGxFinding, DrugRec)` pair across every fixture in
+    `cases` and records the route each Triage variant produced. Zero
+    API calls — this measures the routing layer in isolation.
+
+    Reports:
+      - Per-variant routing breakdown (llm / template / skip counts)
+      - Agreement rate (% of pairs where both variants agree)
+      - Disagreement bucket: which pairs the learned model moved
+        OUT of `llm` (cost savings) vs INTO `llm` (extra calls)
+
+    Pass either an explicit `learned_triage` (already fit/loaded) or a
+    `classifier_path` to a joblib artifact. If neither is given, the
+    function tries `triage_data/classifier.joblib` in the parent of
+    `fixtures_dir`.
+    """
+    # Resolve learned Triage
+    if learned_triage is None:
+        if classifier_path is None:
+            classifier_path = (
+                fixtures_dir.parent.parent / "triage_data" / "classifier.joblib"
+            )
+        if not classifier_path.exists():
+            raise FileNotFoundError(
+                f"No LearnedTriage classifier at {classifier_path}. "
+                f"Run `uv run examples/train_triage.py` first."
+            )
+        learned_triage = LearnedTriage()
+        learned_triage.load_classifier(classifier_path)
+
+    rule_triage = Triage()
+
+    # Dedup (gene, drug, recommendation) so we count one decision per
+    # unique CPIC instance regardless of which fixture it came from.
+    seen: set[tuple[str, str, str]] = set()
+    rule_counts: dict[str, int] = {"llm": 0, "template": 0, "skip": 0}
+    learned_counts: dict[str, int] = {"llm": 0, "template": 0, "skip": 0}
+    agreements = 0
+    total = 0
+    moved_out_of_llm = 0  # learned moved a `llm` rule-decision to template/skip
+    moved_into_llm = 0  # learned moved a `template`/`skip` rule-decision to llm
+
+    unique_fixtures = {c.fixture for c in cases}
+    for fixture in sorted(unique_fixtures):
+        bundle = _parse_for_ablation(fixtures_dir / fixture)
+        for finding in bundle.items:
+            for drug in finding.affected_drugs:
+                key = (finding.gene, drug.drug, drug.recommendation)
+                if key in seen:
+                    continue
+                seen.add(key)
+                rule = rule_triage.classify(finding, drug)
+                learned = learned_triage.classify(finding, drug)
+                rule_counts[rule.route] += 1
+                learned_counts[learned.route] += 1
+                total += 1
+                if rule.route == learned.route:
+                    agreements += 1
+                else:
+                    if rule.route == "llm" and learned.route != "llm":
+                        moved_out_of_llm += 1
+                    elif rule.route != "llm" and learned.route == "llm":
+                        moved_into_llm += 1
+
+    agreement_rate = agreements / total if total else 0.0
+    api_call_delta = moved_out_of_llm - moved_into_llm  # > 0: learned saves calls
+
+    def _row(name: str, counts: dict[str, int], notes: str) -> AblationRow:
+        return AblationRow(
+            name=name,
+            n_cases=total,
+            n_verifier_pass=counts["llm"],  # repurpose: llm column
+            n_rule_pass=counts["template"],  # repurpose: template column
+            judge_mean=None,
+            drafter_input_tokens=counts["skip"],  # repurpose: skip column
+            drafter_output_tokens=0,
+            drafter_latency_s=0.0,
+            notes=notes,
+        )
+
+    rows = (
+        _row(
+            "triage=rule-based",
+            rule_counts,
+            f"llm/template/skip out of {total} unique pairs",
+        ),
+        _row(
+            "triage=learned",
+            learned_counts,
+            (
+                f"agreement={agreement_rate:.1%}; "
+                f"net API-call delta vs rule={-api_call_delta:+d} "
+                f"(negative = fewer LLM calls)"
+            ),
+        ),
+    )
+
+    if out_md is not None:
+        _write_triage_classifier_md(
+            out_md,
+            total=total,
+            rule_counts=rule_counts,
+            learned_counts=learned_counts,
+            agreement_rate=agreement_rate,
+            moved_out_of_llm=moved_out_of_llm,
+            moved_into_llm=moved_into_llm,
+        )
+
+    return rows
+
+
+def _write_triage_classifier_md(
+    path: Path,
+    *,
+    total: int,
+    rule_counts: dict[str, int],
+    learned_counts: dict[str, int],
+    agreement_rate: float,
+    moved_out_of_llm: int,
+    moved_into_llm: int,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines = [
+        "# Ablation F: Rule-based vs Learned Triage (decision-level)",
+        "",
+        f"Zero-API comparison on **{total} unique (gene, drug, recommendation)** triples",
+        "drawn from every fixture in the eval set.",
+        "",
+        "| Variant | llm | template | skip |",
+        "|---|---|---|---|",
+        f"| rule-based | {rule_counts['llm']} | {rule_counts['template']} | {rule_counts['skip']} |",
+        f"| learned    | {learned_counts['llm']} | {learned_counts['template']} | {learned_counts['skip']} |",
+        "",
+        f"**Agreement rate: {agreement_rate:.1%}**",
+        "",
+        f"- Learned moved {moved_out_of_llm} pairs OUT of `llm` "
+        f"(template or skip — saves an API call each).",
+        f"- Learned moved {moved_into_llm} pairs INTO `llm` "
+        f"(extra cost; usually nuanced cases the rules called template/skip).",
+        f"- **Net API-call delta vs rule-based: {moved_into_llm - moved_out_of_llm:+d}** "
+        f"(negative = learned saves calls).",
+    ]
+    path.write_text("\n".join(lines) + "\n")
+
+
 def _gene_order(bundle: Bundle[PGxFinding]) -> tuple[str, ...]:
     return tuple(f.gene for f in bundle.items)
 
@@ -395,6 +557,8 @@ def run_all(
     include_ranker_ablation: bool = True,
     include_triage_ablation: bool = True,
     include_drafter_mode_ablation: bool = True,
+    include_triage_classifier_ablation: bool = True,
+    classifier_path: Path | None = None,
 ) -> dict[str, tuple[AblationRow, ...]]:
     """Run every ablation and write Markdown tables under `output_dir`.
 
@@ -438,6 +602,18 @@ def run_all(
             out_md=output_dir / "ablation_e_drafter_mode.md",
             out_jsonl_dir=output_dir,
         )
+
+    if include_triage_classifier_ablation:
+        try:
+            results["triage_classifier"] = ablation_triage_classifier(
+                cases,
+                fixtures_dir=fixtures_dir,
+                classifier_path=classifier_path,
+                out_md=output_dir / "ablation_f_triage_classifier.md",
+            )
+        except FileNotFoundError as exc:
+            # No classifier on disk yet — skip rather than crash.
+            print(f"[ablation F] skipped: {exc}")
 
     if include_ranker_ablation:
         # Ranker comparison needs a fixture with >1 finding; the

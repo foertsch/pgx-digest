@@ -33,13 +33,14 @@ architecture** — not LLM-as-magic. Specifically:
 
 ## Status
 
-Working end-to-end on PharmCAT example data. 90 tests passing. The
-framework, multi-provider Drafter (Anthropic + Gemini), Triage layer,
-extended Verifier (typed + cross-gene prose check), eval harness, and
-four ablation sweeps are all in place. Next: per-card Drafter mode
-for scaling beyond ~10 genes; `OllamaDrafter` for the local-LLM
-privacy path; second-domain instantiation to validate framework
-portability.
+Working end-to-end on PharmCAT example data. 125 tests passing. The
+framework, multi-provider Drafter (Anthropic + Gemini) with batch and
+per-card modes, Bundle redaction, Triage layer (rule-based + learned
+embedding classifier), extended Verifier (typed + cross-gene prose
+check), eval harness, and six ablation sweeps are all in place. Next:
+RAG over PubMed + CPIC for citation-level grounding; `OllamaDrafter`
+for the local-LLM privacy path; second-domain instantiation to
+validate framework portability.
 
 Run the demo (uses a committed PharmCAT JSON fixture, no Docker needed):
 
@@ -95,7 +96,7 @@ PharmCAT JSON ──┐
 
 ## Ablations
 
-The eval harness drives four sweeps that double as the portfolio's
+The eval harness drives six sweeps that double as the portfolio's
 empirical claims.
 
 | Ablation | What it measures | Result |
@@ -104,6 +105,8 @@ empirical claims.
 | **B** — Drafter model comparison | Same fixture / same prompts on Haiku, Sonnet, Gemini; judge-scored | All three pass typed verification; judge means in 3.1–3.4 (±0.2 noise band); Sonnet is ~2× slower than Haiku for marginal quality |
 | **C** — Deterministic vs LLM ranker | Ordering agreement on the multi-gene fixture | Top-1 match; LLM ranker places actionable IM ahead of Normals (better clinical order than alphabetical tie-break) |
 | **D** — Triage on/off | API-call reduction via deterministic templating | **-27% Drafter input tokens** on the multi-gene fixture with no judge-quality regression |
+| **E** — Batch vs per-card Drafter mode | Failure-mode comparison on real PharmCAT fixtures (up to 73 cards/bundle) | Batch silently drops 5–25% of cards on large bundles; per-card mode catches each missing pair explicitly via the Verifier. Per-card is 2.2× faster wall-clock (`ThreadPoolExecutor`) and 0.27 judge points higher when it succeeds |
+| **F** — Rule-based vs learned Triage | Routing-decision agreement on 141 unique (gene, drug, recommendation) triples | **99.3% agreement.** When labels are bootstrapped from rules, the embedding classifier converges to imitate. Honest scaffolding for the active-learning loop: handle-corrected labels would let the learned model diverge usefully |
 
 ## Scope (MVP)
 

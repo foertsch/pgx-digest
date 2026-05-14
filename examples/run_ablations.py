@@ -2,8 +2,11 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #   "anthropic>=0.40",
+#   "fastembed>=0.4",
 #   "google-genai>=1.0",
+#   "joblib>=1.3",
 #   "python-dotenv>=1.0",
+#   "scikit-learn>=1.5",
 # ]
 # ///
 """Run the three portfolio ablations.
@@ -71,6 +74,7 @@ def main() -> int:
     parser.add_argument("--skip-ranker", action="store_true")
     parser.add_argument("--skip-triage", action="store_true")
     parser.add_argument("--skip-drafter-mode", action="store_true")
+    parser.add_argument("--skip-triage-classifier", action="store_true")
     parser.add_argument(
         "--only-verifier",
         action="store_true",
@@ -116,6 +120,9 @@ def main() -> int:
     include_drafter_mode = not (
         args.skip_drafter_mode or args.only_verifier
     )
+    include_triage_classifier = not (
+        args.skip_triage_classifier or args.only_verifier
+    )
 
     providers = [
         AnthropicProvider(model=args.haiku_model),
@@ -133,6 +140,7 @@ def main() -> int:
         include_ranker_ablation=include_ranker,
         include_triage_ablation=include_triage,
         include_drafter_mode_ablation=include_drafter_mode,
+        include_triage_classifier_ablation=include_triage_classifier,
     )
 
     print()
