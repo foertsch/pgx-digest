@@ -33,10 +33,13 @@ architecture** — not LLM-as-magic. Specifically:
 
 ## Status
 
-Working end-to-end on PharmCAT example data. Framework, PharmCAT JSON
-parser, structured-output Drafter (Claude Haiku 4.5), and Verifier all
-in place. 17 tests passing. PharmCAT-to-VCF integration, Ollama local
-Drafter, and the full eval harness are the next pieces.
+Working end-to-end on PharmCAT example data. 90 tests passing. The
+framework, multi-provider Drafter (Anthropic + Gemini), Triage layer,
+extended Verifier (typed + cross-gene prose check), eval harness, and
+four ablation sweeps are all in place. Next: per-card Drafter mode
+for scaling beyond ~10 genes; `OllamaDrafter` for the local-LLM
+privacy path; second-domain instantiation to validate framework
+portability.
 
 Run the demo (uses a committed PharmCAT JSON fixture, no Docker needed):
 
@@ -56,21 +59,51 @@ clinical-narrative cards (clopidogrel + voriconazole). The VCF entry
 point invokes the upstream PharmCAT pipeline via the `pgkb/pharmcat`
 Docker image.
 
+Run the eval harness (rule-based + LLM-judge tiers, ~$0.01 in Haiku):
+
+```bash
+uv run examples/run_evals.py
+```
+
+Run the four ablation sweeps (zero-API for Ablation A; full sweep ~$0.04):
+
+```bash
+uv run examples/run_ablations.py --only-verifier  # zero-API smoke
+uv run examples/run_ablations.py --skip-gemini    # full Anthropic sweep
+```
+
 ## Architecture
 
 ```
 PharmCAT JSON ──┐
                 ▼
-   ┌─────────────────────────────────┐
-   │ pgx_digest framework             │
-   │  • Bundle[PGxFinding]            │
-   │  • Ranker (deterministic)        │
-   │  • Drafter (Haiku / Ollama)      │
-   │  • Verifier (typed containment)  │
-   └─────────────────────────────────┘
+   ┌─────────────────────────────────────────────┐
+   │ pgx_digest framework                          │
+   │  • Bundle[PGxFinding]                         │
+   │  • Ranker (deterministic + LLMRanker)         │
+   │  • Triage (template / llm / skip router)      │
+   │  • Drafter (LLMDrafter + Provider abstraction │
+   │     for Anthropic / Gemini; TemplateDrafter   │
+   │     for templatable cases; OllamaDrafter      │
+   │     stub for LOCAL_ONLY)                      │
+   │  • Verifier (typed containment + cross-gene   │
+   │     prose check)                              │
+   └─────────────────────────────────────────────┘
                 ▼
         Verified report
 ```
+
+## Ablations
+
+The eval harness drives four sweeps that double as the portfolio's
+empirical claims.
+
+| Ablation | What it measures | Result |
+|---|---|---|
+| **A** — Verifier on/off | Detection rate on controlled hallucinations (an `AdversarialDrafter` corrupts one field per card) | **100% catch** across `swap_pmid`, `swap_drug`, `swap_phenotype`, `swap_diplotype`; 0% false positives on the faithful baseline |
+| **B** — Drafter model comparison | Same fixture / same prompts on Haiku, Sonnet, Gemini; judge-scored | All three pass typed verification; judge means in 3.1–3.4 (±0.2 noise band); Sonnet is ~2× slower than Haiku for marginal quality |
+| **C** — Deterministic vs LLM ranker | Ordering agreement on the multi-gene fixture | Top-1 match; LLM ranker places actionable IM ahead of Normals (better clinical order than alphabetical tie-break) |
+| **D** — Triage on/off | API-call reduction via deterministic templating | **-27% Drafter input tokens** on the multi-gene fixture with no judge-quality regression |
 
 ## Scope (MVP)
 

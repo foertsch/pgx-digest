@@ -11,10 +11,14 @@ Drafter by requiring structured JSON output, which makes verification
 deterministic.
 
 There is one prose-level rule: a card's `recommendation` text may
-mention only its own gene. Cross-gene references in the prose are
-rejected. This catches the highest-stakes prose error we observed in
-eval (CYP2D6 cards naming CYP2C19 alternatives) without paying the
-cost of full claim extraction.
+mention another Bundle gene ONLY IF that gene also appears in the
+source CPIC recommendation for the same (gene, drug) pair. Legitimate
+CPIC cross-references (e.g. CACNA1S anesthetic recommendations
+literally say "Based on RYR1 status...") pass through; LLM-invented
+cross-gene references (e.g. a CYP2D6 card's prose introducing a
+gene the source text never mentioned) are rejected. This is the
+narrowest definition of a "cross-gene hallucination" — the source
+text is the ground truth for which other genes may appear.
 """
 
 from __future__ import annotations
@@ -69,22 +73,36 @@ class Verifier:
                 )
                 continue
 
+            # Look up the source CPIC text for this (gene, drug) so we
+            # can distinguish "LLM invented a cross-gene reference"
+            # from "CPIC source text legitimately mentions another gene"
+            # (e.g. CACNA1S anesthetic recs literally say "Based on
+            # RYR1 status..."). If the drug isn't in the finding (a
+            # separate failure handled below), we use an empty source.
+            source_text = ""
+            for d in finding.affected_drugs:
+                if d.drug == card.drug:
+                    source_text = d.recommendation
+                    break
+
             for other in all_bundle_genes - {card.gene}:
                 # Word-boundary match — gene symbols always contain
                 # digits, so the boundary is unambiguous and we avoid
                 # accidental hits on partial substrings.
-                if re.search(
-                    rf"\b{re.escape(other)}\b", card.recommendation
-                ):
+                pattern = rf"\b{re.escape(other)}\b"
+                in_prose = re.search(pattern, card.recommendation)
+                in_source = re.search(pattern, source_text)
+                if in_prose and not in_source:
                     failures.append(
                         VerificationFailure(
                             card_index=i,
                             field="recommendation",
                             value=other,
                             reason=(
-                                f"cross-gene reference: recommendation "
-                                f"for {card.gene} mentions other Bundle "
-                                f"gene {other}"
+                                f"cross-gene hallucination: "
+                                f"recommendation for {card.gene} "
+                                f"mentions {other} but the source CPIC "
+                                f"text does not"
                             ),
                         )
                     )
