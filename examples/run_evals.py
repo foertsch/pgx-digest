@@ -2,8 +2,11 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #   "anthropic>=0.40",
+#   "fastembed>=0.4",
 #   "google-genai>=1.0",
+#   "joblib>=1.3",
 #   "python-dotenv>=1.0",
+#   "scikit-learn>=1.5",
 # ]
 # ///
 """Eval harness: rule-based + LLM-judge tiers.

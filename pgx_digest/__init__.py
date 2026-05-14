@@ -8,6 +8,7 @@ from pgx_digest.bundle import (
     PrivacyTier,
     Variant,
 )
+from pgx_digest.embeddings import DEFAULT_MODEL, Embedder, LocalEmbedder
 from pgx_digest.drafter import (
     AnthropicProvider,
     Draft,
@@ -36,6 +37,12 @@ from pgx_digest.pharmcat_runner import (
 from pgx_digest.pipeline import PipelineResult, run
 from pgx_digest.ranker import LLMRanker, rank
 from pgx_digest.triage import TemplateDrafter, Triage, TriageDecision
+from pgx_digest.triage_ml import (
+    LearnedTriage,
+    TrainingExample,
+    load_dataset,
+    save_dataset,
+)
 from pgx_digest.verifier import (
     VerificationFailure,
     VerificationResult,
@@ -45,14 +52,18 @@ from pgx_digest.verifier import (
 __all__ = [
     "AnthropicProvider",
     "Bundle",
+    "DEFAULT_MODEL",
     "Draft",
     "Drafter",
     "DraftedCard",
     "DrugRec",
+    "Embedder",
     "EvidenceLevel",
     "GeminiProvider",
     "LLMDrafter",
     "LLMRanker",
+    "LearnedTriage",
+    "LocalEmbedder",
     "OllamaDrafter",
     "PGxFinding",
     "PipelineResult",
@@ -61,6 +72,7 @@ __all__ = [
     "Provider",
     "ProviderResponse",
     "TemplateDrafter",
+    "TrainingExample",
     "Triage",
     "TriageDecision",
     "TriagingDrafter",
@@ -72,11 +84,13 @@ __all__ = [
     "DockerUnavailable",
     "PharmCATRunError",
     "docker_available",
+    "load_dataset",
     "parse_pharmcat_json",
     "rank",
     "run",
     "run_pharmcat",
     "run_pharmcat_multi",
+    "save_dataset",
     "vcf_to_bundle",
     "vcf_to_bundles",
     "select_drafter",
