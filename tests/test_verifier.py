@@ -276,6 +276,145 @@ def test_verifier_uses_word_boundary_no_false_positives() -> None:
     )
 
 
+# ---------------------------------------------------------------------------
+# PubMed citation grounding — optional retriever extension
+# ---------------------------------------------------------------------------
+
+
+class _StubGroundingRetriever:
+    """Stand-in for a PubMedRetriever's grounding interface."""
+
+    def __init__(self, similarity_for: dict[int, float]) -> None:
+        # pmid -> cosine similarity the Verifier should compute
+        self._sim = similarity_for
+
+    def get_by_metadata(self, key: str, value):
+        from pgx_digest.retriever import RetrievedItem
+
+        if key == "pmid" and value in self._sim:
+            return RetrievedItem(
+                text=f"abstract for pmid {value}",
+                score=0.0,
+                metadata={"pmid": value},
+            )
+        return None
+
+    def similarity(self, query: str, item) -> float:
+        return self._sim[item.metadata["pmid"]]
+
+
+def test_verifier_grounding_passes_when_similarity_above_threshold() -> None:
+    """A card whose recommendation is semantically aligned with the
+    cited abstract should pass the grounding check.
+    """
+    retriever = _StubGroundingRetriever(similarity_for={28198005: 0.55})
+    verifier = Verifier(
+        retriever=retriever, citation_grounding_threshold=0.35
+    )
+    draft = _make_draft(cited_pmids=(28198005,))
+    bundle = _make_bundle()
+    # Patch the bundle to include 28198005 in PMIDs so the typed check passes.
+    drug = bundle.items[0].affected_drugs[0]
+    new_drug = DrugRec(
+        drug=drug.drug,
+        recommendation=drug.recommendation,
+        cpic_guideline_id=drug.cpic_guideline_id,
+        pmids=(28198005,),
+        evidence_level=drug.evidence_level,
+    )
+    new_finding = PGxFinding(
+        gene=bundle.items[0].gene,
+        diplotype=bundle.items[0].diplotype,
+        source_variants=bundle.items[0].source_variants,
+        phenotype=bundle.items[0].phenotype,
+        phenotype_source=bundle.items[0].phenotype_source,
+        affected_drugs=(new_drug,),
+        confidence=bundle.items[0].confidence,
+    )
+    bundle = Bundle(
+        items=(new_finding,),
+        privacy_tier=bundle.privacy_tier,
+        source=bundle.source,
+    )
+    result = verifier.verify(draft, bundle)
+    assert result.passed, [f.reason for f in result.failures]
+
+
+def test_verifier_grounding_flags_when_similarity_below_threshold() -> None:
+    """Low semantic similarity between card and abstract -> grounding failure."""
+    retriever = _StubGroundingRetriever(similarity_for={28198005: 0.10})
+    verifier = Verifier(
+        retriever=retriever, citation_grounding_threshold=0.35
+    )
+    draft = _make_draft(cited_pmids=(28198005,))
+    bundle = _make_bundle()
+    drug = bundle.items[0].affected_drugs[0]
+    new_drug = DrugRec(
+        drug=drug.drug,
+        recommendation=drug.recommendation,
+        cpic_guideline_id=drug.cpic_guideline_id,
+        pmids=(28198005,),
+        evidence_level=drug.evidence_level,
+    )
+    new_finding = PGxFinding(
+        gene=bundle.items[0].gene,
+        diplotype=bundle.items[0].diplotype,
+        source_variants=bundle.items[0].source_variants,
+        phenotype=bundle.items[0].phenotype,
+        phenotype_source=bundle.items[0].phenotype_source,
+        affected_drugs=(new_drug,),
+        confidence=bundle.items[0].confidence,
+    )
+    bundle = Bundle(
+        items=(new_finding,),
+        privacy_tier=bundle.privacy_tier,
+        source=bundle.source,
+    )
+    result = verifier.verify(draft, bundle)
+    grounding_failures = [
+        f for f in result.failures if "grounding similarity" in f.reason
+    ]
+    assert len(grounding_failures) == 1
+    assert grounding_failures[0].value == "28198005"
+
+
+def test_verifier_grounding_silent_when_pmid_not_in_retriever() -> None:
+    """PMIDs the retriever doesn't have an abstract for (e.g. retracted)
+    should not produce a grounding failure — the typed check still runs.
+    """
+    retriever = _StubGroundingRetriever(similarity_for={})
+    verifier = Verifier(retriever=retriever)
+    draft = _make_draft(cited_pmids=(28198005,))
+    bundle = _make_bundle()
+    drug = bundle.items[0].affected_drugs[0]
+    new_drug = DrugRec(
+        drug=drug.drug,
+        recommendation=drug.recommendation,
+        cpic_guideline_id=drug.cpic_guideline_id,
+        pmids=(28198005,),
+        evidence_level=drug.evidence_level,
+    )
+    new_finding = PGxFinding(
+        gene=bundle.items[0].gene,
+        diplotype=bundle.items[0].diplotype,
+        source_variants=bundle.items[0].source_variants,
+        phenotype=bundle.items[0].phenotype,
+        phenotype_source=bundle.items[0].phenotype_source,
+        affected_drugs=(new_drug,),
+        confidence=bundle.items[0].confidence,
+    )
+    bundle = Bundle(
+        items=(new_finding,),
+        privacy_tier=bundle.privacy_tier,
+        source=bundle.source,
+    )
+    result = verifier.verify(draft, bundle)
+    # No grounding failure even though the abstract wasn't available.
+    assert all(
+        "grounding similarity" not in f.reason for f in result.failures
+    )
+
+
 def test_verifier_flags_multiple_cross_gene_references() -> None:
     """Two other Bundle genes named in one card's prose, neither in the
     source CPIC text -> two failures.

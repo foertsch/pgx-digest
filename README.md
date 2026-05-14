@@ -33,14 +33,17 @@ architecture** — not LLM-as-magic. Specifically:
 
 ## Status
 
-Working end-to-end on PharmCAT example data. 125 tests passing. The
-framework, multi-provider Drafter (Anthropic + Gemini) with batch and
-per-card modes, Bundle redaction, Triage layer (rule-based + learned
-embedding classifier), extended Verifier (typed + cross-gene prose
-check), eval harness, and six ablation sweeps are all in place. Next:
-RAG over PubMed + CPIC for citation-level grounding; `OllamaDrafter`
-for the local-LLM privacy path; second-domain instantiation to
-validate framework portability.
+Working end-to-end on PharmCAT example data. 153 tests passing (plus
+2 live-network smoke tests gated behind `PGX_LIVE_NETWORK_TESTS=1`).
+The framework, multi-provider Drafter (Anthropic + Gemini) with batch
+and per-card modes, Bundle redaction, Triage layer (rule-based +
+learned embedding classifier), extended Verifier (typed + cross-gene
+prose check + optional citation grounding), eval harness, and seven
+ablation sweeps are all in place. Plus **RAG layer**: PubMed
+abstracts for citation grounding (Verifier-side) and CPIC guideline
+text for prompt enrichment (Drafter-side). Next: `OllamaDrafter` for
+the local-LLM privacy path; second-domain instantiation to validate
+framework portability.
 
 Run the demo (uses a committed PharmCAT JSON fixture, no Docker needed):
 
@@ -78,25 +81,28 @@ uv run examples/run_ablations.py --skip-gemini    # full Anthropic sweep
 ```
 PharmCAT JSON ──┐
                 ▼
-   ┌─────────────────────────────────────────────┐
-   │ pgx_digest framework                          │
-   │  • Bundle[PGxFinding]                         │
-   │  • Ranker (deterministic + LLMRanker)         │
-   │  • Triage (template / llm / skip router)      │
-   │  • Drafter (LLMDrafter + Provider abstraction │
-   │     for Anthropic / Gemini; TemplateDrafter   │
-   │     for templatable cases; OllamaDrafter      │
-   │     stub for LOCAL_ONLY)                      │
-   │  • Verifier (typed containment + cross-gene   │
-   │     prose check)                              │
-   └─────────────────────────────────────────────┘
+   ┌──────────────────────────────────────────────────┐
+   │ pgx_digest framework                               │
+   │  • Bundle[PGxFinding]                              │
+   │  • Ranker (deterministic + LLMRanker)              │
+   │  • Triage (template / llm / skip — rule-based or   │
+   │     learned embedding classifier)                  │
+   │  • Drafter (LLMDrafter + Provider abstraction      │
+   │     for Anthropic / Gemini; TemplateDrafter        │
+   │     for templatable cases; OllamaDrafter stub      │
+   │     for LOCAL_ONLY; optional CPIC retriever for    │
+   │     authoritative prompt enrichment)               │
+   │  • Verifier (typed containment + cross-gene prose  │
+   │     check + optional PubMed grounding for cited    │
+   │     PMIDs)                                         │
+   └──────────────────────────────────────────────────┘
                 ▼
         Verified report
 ```
 
 ## Ablations
 
-The eval harness drives six sweeps that double as the portfolio's
+The eval harness drives seven sweeps that double as the portfolio's
 empirical claims.
 
 | Ablation | What it measures | Result |
@@ -106,7 +112,8 @@ empirical claims.
 | **C** — Deterministic vs LLM ranker | Ordering agreement on the multi-gene fixture | Top-1 match; LLM ranker places actionable IM ahead of Normals (better clinical order than alphabetical tie-break) |
 | **D** — Triage on/off | API-call reduction via deterministic templating | **-27% Drafter input tokens** on the multi-gene fixture with no judge-quality regression |
 | **E** — Batch vs per-card Drafter mode | Failure-mode comparison on real PharmCAT fixtures (up to 73 cards/bundle) | Batch silently drops 5–25% of cards on large bundles; per-card mode catches each missing pair explicitly via the Verifier. Per-card is 2.2× faster wall-clock (`ThreadPoolExecutor`) and 0.27 judge points higher when it succeeds |
-| **F** — Rule-based vs learned Triage | Routing-decision agreement on 141 unique (gene, drug, recommendation) triples | **99.3% agreement.** When labels are bootstrapped from rules, the embedding classifier converges to imitate. Honest scaffolding for the active-learning loop: handle-corrected labels would let the learned model diverge usefully |
+| **F** — Rule-based vs learned Triage | Routing-decision agreement on 141 unique (gene, drug, recommendation) triples | **99.3% agreement.** When labels are bootstrapped from rules, the embedding classifier converges to imitate. Honest scaffolding for the active-learning loop: hand-corrected labels would let the learned model diverge usefully |
+| **G** — RAG on/off | CPIC guideline text injected into Drafter prompt; PubMed abstracts indexed for citation-level grounding inside the Verifier | Verifier extension turns PMID citations from "the integer is in the Bundle" into "the prose is semantically supported by what the cited paper actually says." See PR #5 for run numbers |
 
 ## Scope (MVP)
 

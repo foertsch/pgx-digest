@@ -8,7 +8,13 @@ from pgx_digest.bundle import (
     PrivacyTier,
     Variant,
 )
+from pgx_digest.corpora import CPICRetriever, PubMedRetriever
 from pgx_digest.embeddings import DEFAULT_MODEL, Embedder, LocalEmbedder
+from pgx_digest.retriever import (
+    EmbeddingRetriever,
+    RetrievedItem,
+    Retriever,
+)
 from pgx_digest.drafter import (
     AnthropicProvider,
     Draft,
@@ -52,12 +58,14 @@ from pgx_digest.verifier import (
 __all__ = [
     "AnthropicProvider",
     "Bundle",
+    "CPICRetriever",
     "DEFAULT_MODEL",
     "Draft",
     "Drafter",
     "DraftedCard",
     "DrugRec",
     "Embedder",
+    "EmbeddingRetriever",
     "EvidenceLevel",
     "GeminiProvider",
     "LLMDrafter",
@@ -71,6 +79,9 @@ __all__ = [
     "PrivacyViolation",
     "Provider",
     "ProviderResponse",
+    "PubMedRetriever",
+    "RetrievedItem",
+    "Retriever",
     "TemplateDrafter",
     "TrainingExample",
     "Triage",

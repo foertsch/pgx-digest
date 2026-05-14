@@ -23,4 +23,5 @@ venv/
 output/
 results/
 eval_results/
+rag_cache/
 *.log

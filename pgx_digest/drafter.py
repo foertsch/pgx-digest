@@ -371,12 +371,20 @@ class LLMDrafter(Drafter):
         redact_provenance: bool = True,
         mode: DrafterMode = "batch",
         max_workers: int = 8,
+        retriever: "Any | None" = None,
+        retriever_k: int = 3,
     ) -> None:
         self.provider = provider or AnthropicProvider()
         self.max_tokens = max_tokens
         self.redact_provenance = redact_provenance
         self.mode: DrafterMode = mode
         self.max_workers = max_workers
+        # Optional RAG: when provided, the per-pair recommendation
+        # text becomes the retrieval query and the top-k retrieved
+        # snippets are appended to the LLM prompt as authoritative
+        # context (intended use: a CPICRetriever).
+        self.retriever = retriever
+        self.retriever_k = retriever_k
         # Aggregate usage across per_card workers is stored here so the
         # eval runner sees consistent tokens-and-latency regardless of
         # which mode produced the draft.
@@ -402,6 +410,45 @@ class LLMDrafter(Drafter):
             items.append(row)
         return json.dumps(items, sort_keys=True, default=str)
 
+    def _retrieve_context_for(self, bundle: Bundle[PGxFinding]) -> str:
+        """Build a CPIC-context block to prepend to the user message.
+
+        Queries the retriever once per (gene, drug, phenotype) tuple
+        and concatenates the top-k retrieved snippets. Returns "" when
+        no retriever is configured.
+        """
+        if self.retriever is None or not bundle.items:
+            return ""
+        seen: set[str] = set()
+        lines: list[str] = []
+        for finding in bundle.items:
+            for drug in finding.affected_drugs:
+                query = (
+                    f"{finding.gene} {finding.phenotype} {drug.drug}"
+                )
+                if query in seen:
+                    continue
+                seen.add(query)
+                hits = self.retriever.retrieve(query, k=self.retriever_k)
+                for hit in hits:
+                    pheno = hit.metadata.get("phenotypes") or {}
+                    pheno_str = (
+                        "; ".join(f"{g}={p}" for g, p in sorted(pheno.items()))
+                        if pheno
+                        else "n/a"
+                    )
+                    lines.append(
+                        f"- [{hit.metadata.get('drug', '?')} | "
+                        f"{pheno_str} | score={hit.score:.2f}] {hit.text}"
+                    )
+        if not lines:
+            return ""
+        header = (
+            "Authoritative CPIC reference (retrieved — use to ground "
+            "language and check for staleness; do NOT cite verbatim):\n"
+        )
+        return header + "\n".join(lines)
+
     def draft(self, bundle: Bundle[PGxFinding]) -> Draft:
         if bundle.privacy_tier == PrivacyTier.LOCAL_ONLY:
             raise PrivacyViolation(
@@ -415,9 +462,15 @@ class LLMDrafter(Drafter):
 
     def _draft_batch(self, bundle: Bundle[PGxFinding]) -> Draft:
         bundle_json = self._serialize_bundle(bundle)
+        cpic_context = self._retrieve_context_for(bundle)
+        user_msg = (
+            f"{cpic_context}\n\nBundle (JSON):\n{bundle_json}"
+            if cpic_context
+            else f"Bundle (JSON):\n{bundle_json}"
+        )
         resp = self.provider.generate(
             system=SYSTEM_PROMPT,
-            user=f"Bundle (JSON):\n{bundle_json}",
+            user=user_msg,
             schema=OUTPUT_SCHEMA,
             max_tokens=self.max_tokens,
         )
@@ -512,9 +565,15 @@ class LLMDrafter(Drafter):
             metadata=bundle.metadata,
         )
         bundle_json = self._serialize_bundle(mini)
+        cpic_context = self._retrieve_context_for(mini)
+        user_msg = (
+            f"{cpic_context}\n\nBundle (JSON):\n{bundle_json}"
+            if cpic_context
+            else f"Bundle (JSON):\n{bundle_json}"
+        )
         resp = self.provider.generate(
             system=SYSTEM_PROMPT,
-            user=f"Bundle (JSON):\n{bundle_json}",
+            user=user_msg,
             schema=OUTPUT_SCHEMA,
             max_tokens=self.max_tokens,
         )

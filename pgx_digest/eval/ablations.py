@@ -34,10 +34,12 @@ from pgx_digest.drafter import (
     Provider,
     TriagingDrafter,
 )
+from pgx_digest.corpora import CPICRetriever, PubMedRetriever
 from pgx_digest.eval.adversarial import AdversarialDrafter, AdversarialMode
 from pgx_digest.pharmcat import parse_pharmcat_json as _parse_for_ablation
 from pgx_digest.triage import Triage, TriageDecision
 from pgx_digest.triage_ml import LearnedTriage
+from pgx_digest.verifier import Verifier
 from pgx_digest.eval.cases import EvalCase, load_cases
 from pgx_digest.eval.judge import Judge
 from pgx_digest.eval.report import (
@@ -318,6 +320,134 @@ def ablation_drafter_mode(
 
 
 # ---------------------------------------------------------------------------
+# (g) RAG on/off — CPIC context to Drafter + PubMed grounding in Verifier
+# ---------------------------------------------------------------------------
+
+
+def ablation_rag(
+    cases: tuple[EvalCase, ...],
+    *,
+    fixtures_dir: Path,
+    model: str = "claude-haiku-4-5",
+    cache_dir: Path | None = None,
+    citation_grounding_threshold: float = 0.35,
+    judge: Judge | None = None,
+    out_md: Path | None = None,
+    out_jsonl_dir: Path | None = None,
+) -> tuple[AblationRow, ...]:
+    """Compare RAG-enabled vs RAG-disabled on the same cases.
+
+    `RAG-on` configuration:
+    - `LLMDrafter` gets a `CPICRetriever` built over every drug name
+      that appears in any case fixture (one index, shared across cases).
+    - `Verifier` gets a `PubMedRetriever` built over every PMID
+      present in any case bundle (one index, shared across cases).
+    - The Drafter prepends retrieved CPIC snippets to its prompt; the
+      Verifier flags `cited_pmids` whose abstract-similarity falls
+      below `citation_grounding_threshold`.
+
+    `RAG-off` is the bare LLMDrafter + bare Verifier baseline.
+
+    Reports verifier+rule pass rates, judge mean, and token usage for
+    each side. The interesting numbers are (a) does RAG context
+    improve judge means, and (b) does PubMed grounding catch real
+    ungrounded citations vs the bare typed verifier.
+    """
+    # Build the union of (drug names, PMIDs) across all cases' fixtures.
+    drug_names: set[str] = set()
+    pmids: set[int] = set()
+    unique_fixtures = {c.fixture for c in cases}
+    for fixture in unique_fixtures:
+        bundle = _parse_for_ablation(fixtures_dir / fixture)
+        for finding in bundle.items:
+            for drug in finding.affected_drugs:
+                drug_names.add(drug.drug)
+                pmids.update(drug.pmids)
+
+    cpic = CPICRetriever(cache_dir=cache_dir / "cpic" if cache_dir else None)
+    pubmed = PubMedRetriever(
+        cache_dir=cache_dir / "pubmed" if cache_dir else None
+    )
+    print(
+        f"[ablation G] indexing {len(drug_names)} drugs (CPIC) "
+        f"and {len(pmids)} PMIDs (PubMed)..."
+    )
+    n_cpic = cpic.build_index_for_drugs(sorted(drug_names))
+    n_pubmed = pubmed.build_index_for_pmids(sorted(pmids))
+    print(
+        f"[ablation G] indexed {n_cpic} CPIC recommendations + "
+        f"{n_pubmed} PubMed abstracts."
+    )
+
+    rows: list[AblationRow] = []
+    from pgx_digest.eval.runner import run_eval  # local to avoid cycle
+
+    for rag_on in (False, True):
+        provider = AnthropicProvider(model=model)
+        drafter = LLMDrafter(
+            provider=provider,
+            retriever=cpic if rag_on else None,
+        )
+        # The Verifier is constructed inside run_case from a default
+        # `Verifier()` — to inject a custom one we'd need to extend the
+        # runner. For Plan B's first cut we let the Verifier in
+        # run_case stay bare and instead post-hoc check grounding on
+        # the produced drafts. That keeps the runner unchanged.
+        results = run_eval(
+            cases,
+            fixtures_dir=fixtures_dir,
+            drafter=drafter,
+            ranker=deterministic_rank,
+            verifier_on=True,
+            judge=judge,
+        )
+
+        # Apply citation grounding as a post-hoc check on the cards
+        # produced under rag_on; tally additional failures.
+        n_grounding_failures = 0
+        if rag_on:
+            grounding_verifier = Verifier(
+                retriever=pubmed,
+                citation_grounding_threshold=citation_grounding_threshold,
+            )
+            for r in results:
+                gr_result = grounding_verifier.verify(r.draft, r.bundle)
+                n_grounding_failures += sum(
+                    1
+                    for f in gr_result.failures
+                    if "grounding similarity" in f.reason
+                )
+
+        label = "rag=ON" if rag_on else "rag=OFF"
+        if out_jsonl_dir is not None:
+            write_results_jsonl(
+                results,
+                out_jsonl_dir / f"rag_{'on' if rag_on else 'off'}.jsonl",
+            )
+        row = summarize(
+            name=f"{label} ({model})",
+            results=results,
+            notes=(
+                f"grounding failures (cards × cited PMIDs): "
+                f"{n_grounding_failures}"
+                if rag_on
+                else "baseline (no RAG)"
+            ),
+        )
+        rows.append(row)
+
+    rows_t = tuple(rows)
+    if out_md is not None:
+        write_ablation_markdown(
+            f"Ablation G: RAG on vs off ({model}) "
+            f"— CPIC context + PubMed grounding",
+            rows_t,
+            out_md,
+        )
+    return rows_t
+
+
+# ---------------------------------------------------------------------------
 # (f) Rule-based vs learned Triage — decision-level comparison
 # ---------------------------------------------------------------------------
 
@@ -558,7 +688,9 @@ def run_all(
     include_triage_ablation: bool = True,
     include_drafter_mode_ablation: bool = True,
     include_triage_classifier_ablation: bool = True,
+    include_rag_ablation: bool = True,
     classifier_path: Path | None = None,
+    rag_cache_dir: Path | None = None,
 ) -> dict[str, tuple[AblationRow, ...]]:
     """Run every ablation and write Markdown tables under `output_dir`.
 
@@ -614,6 +746,20 @@ def run_all(
         except FileNotFoundError as exc:
             # No classifier on disk yet — skip rather than crash.
             print(f"[ablation F] skipped: {exc}")
+
+    if include_rag_ablation:
+        try:
+            results["rag"] = ablation_rag(
+                cases,
+                fixtures_dir=fixtures_dir,
+                cache_dir=rag_cache_dir,
+                judge=Judge(),
+                out_md=output_dir / "ablation_g_rag.md",
+                out_jsonl_dir=output_dir,
+            )
+        except Exception as exc:  # noqa: BLE001
+            # Network failures, etc — skip rather than crash the sweep.
+            print(f"[ablation G] skipped: {exc}")
 
     if include_ranker_ablation:
         # Ranker comparison needs a fixture with >1 finding; the
