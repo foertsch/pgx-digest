@@ -1,5 +1,7 @@
 # pgx-digest
 
+[![CI](https://github.com/foertsch/pgx-digest/actions/workflows/ci.yml/badge.svg)](https://github.com/foertsch/pgx-digest/actions/workflows/ci.yml)
+
 > Privacy-first, locally-runnable pharmacogenomic reports with a token-level
 > verifier that makes LLM hallucination impossible.
 
