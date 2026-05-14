@@ -174,7 +174,9 @@ def _card(gene: str, drug: str, recommendation: str) -> DraftedCard:
 
 
 def test_verifier_rejects_cross_gene_reference_in_prose() -> None:
-    """CYP2D6 card mentioning CYP2C19 should fail verification."""
+    """CYP2D6 card mentioning CYP2C19 should fail verification when
+    the source recommendation does not also mention CYP2C19.
+    """
     bad_card = _card(
         "CYP2D6",
         "amitriptyline",
@@ -184,11 +186,69 @@ def test_verifier_rejects_cross_gene_reference_in_prose() -> None:
     result = Verifier().verify(draft, _two_gene_bundle())
     assert not result.passed
     cross_gene = [
-        f for f in result.failures if f.reason.startswith("cross-gene")
+        f
+        for f in result.failures
+        if f.reason.startswith("cross-gene hallucination")
     ]
     assert len(cross_gene) == 1
     assert cross_gene[0].value == "CYP2C19"
     assert cross_gene[0].field == "recommendation"
+
+
+def test_verifier_accepts_cross_gene_reference_present_in_source() -> None:
+    """A card's prose may mention another Bundle gene if the source
+    CPIC recommendation also mentions it. This is the legitimate
+    cross-reference pattern (CACNA1S anesthetics → RYR1, CYP2D6 TCAs →
+    CYP2C19, etc.) — not a hallucination.
+    """
+    bundle = _two_gene_bundle()
+    # Mutate the CYP2D6/amitriptyline DrugRec to have a CPIC-style
+    # cross-reference in its source text.
+    cyp2d6 = next(f for f in bundle.items if f.gene == "CYP2D6")
+    amit = cyp2d6.affected_drugs[0]
+    new_drug = DrugRec(
+        drug=amit.drug,
+        recommendation=(
+            "Consider alternative drug not metabolized by CYP2C19. "
+            "TCAs without major CYP2C19 metabolism include nortriptyline."
+        ),
+        cpic_guideline_id=amit.cpic_guideline_id,
+        pmids=amit.pmids,
+        evidence_level=amit.evidence_level,
+    )
+    new_cyp2d6 = PGxFinding(
+        gene=cyp2d6.gene,
+        diplotype=cyp2d6.diplotype,
+        source_variants=cyp2d6.source_variants,
+        phenotype=cyp2d6.phenotype,
+        phenotype_source=cyp2d6.phenotype_source,
+        affected_drugs=(new_drug,),
+        confidence=cyp2d6.confidence,
+    )
+    cyp2c19 = next(f for f in bundle.items if f.gene == "CYP2C19")
+    new_bundle = Bundle(
+        items=(cyp2c19, new_cyp2d6),
+        privacy_tier=bundle.privacy_tier,
+        source=bundle.source,
+    )
+
+    # Card faithfully paraphrases the CPIC source — mentions CYP2C19
+    # because the source does.
+    card = _card(
+        "CYP2D6",
+        "amitriptyline",
+        "Consider an alternative not metabolized by CYP2C19.",
+    )
+    draft = Draft(cards=(card,), raw_text="")
+    result = Verifier().verify(draft, new_bundle)
+    cross_gene = [
+        f
+        for f in result.failures
+        if f.reason.startswith("cross-gene")
+    ]
+    assert cross_gene == [], (
+        f"unexpected cross-gene failures: {cross_gene}"
+    )
 
 
 def test_verifier_accepts_own_gene_mention_in_prose() -> None:
@@ -217,8 +277,9 @@ def test_verifier_uses_word_boundary_no_false_positives() -> None:
 
 
 def test_verifier_flags_multiple_cross_gene_references() -> None:
-    """Two other Bundle genes named in one card -> two failures."""
-    # Add a third gene to the bundle so we have two "others" to leak.
+    """Two other Bundle genes named in one card's prose, neither in the
+    source CPIC text -> two failures.
+    """
     bundle = _two_gene_bundle()
     cyp2c9 = PGxFinding(
         gene="CYP2C9",
@@ -234,6 +295,9 @@ def test_verifier_flags_multiple_cross_gene_references() -> None:
         privacy_tier=bundle.privacy_tier,
         source=bundle.source,
     )
+    # The CYP2D6/amitriptyline source text in _two_gene_bundle is "..."
+    # (no gene names), so any other-gene mention in the card prose is
+    # a hallucination.
     card = _card(
         "CYP2D6",
         "amitriptyline",
@@ -242,7 +306,9 @@ def test_verifier_flags_multiple_cross_gene_references() -> None:
     draft = Draft(cards=(card,), raw_text="")
     result = Verifier().verify(draft, bundle)
     cross_gene = [
-        f for f in result.failures if f.reason.startswith("cross-gene")
+        f
+        for f in result.failures
+        if f.reason.startswith("cross-gene")
     ]
     leaked = {f.value for f in cross_gene}
     assert leaked == {"CYP2C19", "CYP2C9"}

@@ -129,15 +129,17 @@ def ablation_verifier(
 def _default_model_providers() -> tuple[Provider, ...]:
     """The three providers compared in Ablation B.
 
-    Defaults to `gemini-2.0-flash` because Google's free-tier RPD on
-    `gemini-2.5-flash` is too low for iterative eval work (~20/day).
-    `2.0-flash` gives ~75x headroom with comparable structured-output
-    quality for this task.
+    Defaults to `gemini-2.5-flash-lite`. Google's free-tier RPD on
+    `gemini-2.5-flash` is ~20/day and on `gemini-2.0-flash` is now
+    zero on at least some projects; the `-lite` variant retains
+    free-tier access (~1000 RPD) with lower quality. To compare
+    against the stronger Gemini variants, pass an explicit
+    `providers=` tuple or use the `--gemini-model` flag on the CLI.
     """
     return (
         AnthropicProvider(model="claude-haiku-4-5"),
         AnthropicProvider(model="claude-sonnet-4-6"),
-        GeminiProvider(model="gemini-2.0-flash"),
+        GeminiProvider(model="gemini-2.5-flash-lite"),
     )
 
 
@@ -251,6 +253,67 @@ def ablation_triage(
     return rows_t
 
 
+# ---------------------------------------------------------------------------
+# (e) Batch vs per-card Drafter mode
+# ---------------------------------------------------------------------------
+
+
+def ablation_drafter_mode(
+    cases: tuple[EvalCase, ...],
+    *,
+    fixtures_dir: Path,
+    model: str = "claude-haiku-4-5",
+    judge: Judge | None = None,
+    max_workers: int = 8,
+    max_tokens: int = 16384,
+    out_md: Path | None = None,
+    out_jsonl_dir: Path | None = None,
+) -> tuple[AblationRow, ...]:
+    """Batch vs per-card LLMDrafter on a single model.
+
+    Reports tokens, latency, judge mean, and verifier+rule pass rates
+    for each mode. The per-card mode fans calls out via
+    `ThreadPoolExecutor`; verifier pass rate is the most interesting
+    number because per-card *structurally* eliminates cross-gene
+    contamination (each call sees only one gene).
+    """
+    rows: list[AblationRow] = []
+
+    for mode in ("batch", "per_card"):
+        provider = AnthropicProvider(model=model)
+        drafter = LLMDrafter(
+            provider=provider,
+            mode=mode,  # type: ignore[arg-type]
+            max_workers=max_workers,
+            max_tokens=max_tokens,
+        )
+        results = run_eval(
+            cases,
+            fixtures_dir=fixtures_dir,
+            drafter=drafter,
+            ranker=deterministic_rank,
+            verifier_on=True,
+            judge=judge,
+        )
+        if out_jsonl_dir is not None:
+            write_results_jsonl(
+                results,
+                out_jsonl_dir / f"drafter_mode_{mode}.jsonl",
+            )
+        rows.append(
+            summarize(name=f"mode={mode} ({model})", results=results)
+        )
+
+    rows_t = tuple(rows)
+    if out_md is not None:
+        write_ablation_markdown(
+            f"Ablation E: Batch vs per-card Drafter mode ({model})",
+            rows_t,
+            out_md,
+        )
+    return rows_t
+
+
 def _gene_order(bundle: Bundle[PGxFinding]) -> tuple[str, ...]:
     return tuple(f.gene for f in bundle.items)
 
@@ -331,6 +394,7 @@ def run_all(
     include_model_ablation: bool = True,
     include_ranker_ablation: bool = True,
     include_triage_ablation: bool = True,
+    include_drafter_mode_ablation: bool = True,
 ) -> dict[str, tuple[AblationRow, ...]]:
     """Run every ablation and write Markdown tables under `output_dir`.
 
@@ -363,6 +427,15 @@ def run_all(
             fixtures_dir=fixtures_dir,
             judge=Judge(),
             out_md=output_dir / "ablation_d_triage.md",
+            out_jsonl_dir=output_dir,
+        )
+
+    if include_drafter_mode_ablation:
+        results["drafter_mode"] = ablation_drafter_mode(
+            cases,
+            fixtures_dir=fixtures_dir,
+            judge=Judge(),
+            out_md=output_dir / "ablation_e_drafter_mode.md",
             out_jsonl_dir=output_dir,
         )
 

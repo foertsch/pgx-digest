@@ -17,12 +17,30 @@ T = TypeVar("T")
 class PrivacyTier(str, Enum):
     """Sensitivity tier of the data inside a Bundle.
 
-    Drives Drafter selection: cloud-backed Drafters refuse to run on
-    LOCAL_ONLY bundles.
+    Drives Drafter selection. Four tiers correspond to four deployment
+    targets — see `select_drafter()` in `drafter.py`:
+
+    - PUBLIC: demo data; safe to send to Anthropic / Google AI Studio
+      direct APIs (commercial terms — no training, retention only for
+      abuse review).
+    - PSEUDONYMIZED: research-grade pseudonymized data; same direct
+      APIs are acceptable.
+    - ENTERPRISE: real patient data covered by a BAA / DPA / similar.
+      Reserved for Anthropic-on-Bedrock or Anthropic/Gemini-on-Vertex
+      deployments where the cloud provider's data-handling guarantees
+      apply (data residency, VPC isolation, no training, audit logs).
+      An `EnterpriseProvider` is not yet implemented; `select_drafter`
+      will route ENTERPRISE to LLMDrafter for now and the calling code
+      must explicitly choose an enterprise-deployed provider. This
+      tier exists to keep the type signature honest.
+    - LOCAL_ONLY: personal genome data that must not leave the device.
+      Cloud-backed Drafters refuse this tier; `OllamaDrafter` is the
+      intended handler (currently stubbed).
     """
 
     PUBLIC = "public"
     PSEUDONYMIZED = "pseudonymized"
+    ENTERPRISE = "enterprise"
     LOCAL_ONLY = "local_only"
 
 

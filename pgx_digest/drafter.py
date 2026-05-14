@@ -15,8 +15,9 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
-from typing import Any
+from typing import Any, Literal
 
 import anthropic
 
@@ -331,25 +332,75 @@ class Drafter(ABC):
     def draft(self, bundle: Bundle[PGxFinding]) -> Draft: ...
 
 
+DrafterMode = Literal["batch", "per_card"]
+
+
 class LLMDrafter(Drafter):
     """Cloud Drafter, provider-agnostic.
 
     Refuses to run on `LOCAL_ONLY` bundles regardless of provider — the
     privacy story is enforced here, not in any single provider.
+
+    Two generation modes:
+
+    - `batch` (default): one provider call per Bundle. The whole bundle
+      is serialized as JSON; the model emits all cards in one response.
+      Cheaper in API-call count and good for small bundles, but output
+      size grows linearly with bundle size and the model's view of
+      cross-card context can leak inappropriate gene references.
+
+    - `per_card`: one provider call per (PGxFinding, DrugRec) pair,
+      fanned out concurrently via ThreadPoolExecutor. Each call only
+      sees one finding + one drug — structurally eliminates cross-gene
+      contamination. Scales to large bundles without hitting output
+      `max_tokens`. Privacy side benefit: each API call sees only one
+      gene, reducing the quasi-identifying multi-gene fingerprint of a
+      single request.
+
+    By default the JSON shipped to the provider is *redacted*: the
+    `source_variants` field (rsids, chromosomal positions, genotype
+    calls) is stripped from each finding. The LLM doesn't need raw
+    variant data to write prose — the `diplotype` name alone suffices.
+    Set `redact_provenance=False` to send the full bundle for debugging.
     """
 
     def __init__(
         self,
         provider: Provider | None = None,
         max_tokens: int = 8192,
+        redact_provenance: bool = True,
+        mode: DrafterMode = "batch",
+        max_workers: int = 8,
     ) -> None:
         self.provider = provider or AnthropicProvider()
         self.max_tokens = max_tokens
+        self.redact_provenance = redact_provenance
+        self.mode: DrafterMode = mode
+        self.max_workers = max_workers
+        # Aggregate usage across per_card workers is stored here so the
+        # eval runner sees consistent tokens-and-latency regardless of
+        # which mode produced the draft.
         self.last_response: ProviderResponse | None = None
 
     @property
     def model(self) -> str:
         return self.provider.model
+
+    def _serialize_bundle(self, bundle: Bundle[PGxFinding]) -> str:
+        """Render the bundle as JSON for the provider, with optional
+        provenance redaction. The Verifier still sees the original
+        Bundle object — only the prompt payload is affected.
+        """
+        items: list[dict[str, Any]] = []
+        for finding in bundle.items:
+            row = asdict(finding)
+            if self.redact_provenance:
+                # Drop raw variant calls — they identify a specific
+                # genome at chromosomal positions, and the LLM never
+                # needs them for prose synthesis.
+                row["source_variants"] = []
+            items.append(row)
+        return json.dumps(items, sort_keys=True, default=str)
 
     def draft(self, bundle: Bundle[PGxFinding]) -> Draft:
         if bundle.privacy_tier == PrivacyTier.LOCAL_ONLY:
@@ -358,13 +409,12 @@ class LLMDrafter(Drafter):
                 f"LOCAL_ONLY bundle (source={bundle.source!r}). Use "
                 f"OllamaDrafter for personal genome data."
             )
+        if self.mode == "per_card":
+            return self._draft_per_card(bundle)
+        return self._draft_batch(bundle)
 
-        bundle_json = json.dumps(
-            [asdict(finding) for finding in bundle.items],
-            sort_keys=True,
-            default=str,
-        )
-
+    def _draft_batch(self, bundle: Bundle[PGxFinding]) -> Draft:
+        bundle_json = self._serialize_bundle(bundle)
         resp = self.provider.generate(
             system=SYSTEM_PROMPT,
             user=f"Bundle (JSON):\n{bundle_json}",
@@ -386,6 +436,102 @@ class LLMDrafter(Drafter):
             for c in data["cards"]
         )
         return Draft(cards=cards, raw_text=resp.text)
+
+    def _draft_per_card(self, bundle: Bundle[PGxFinding]) -> Draft:
+        """Fan out one provider call per (finding, drug) pair.
+
+        A worker may return `(None, resp)` if the model declined to
+        emit a card (typically for Unknown/Uncertain phenotype pairs
+        where there's no actionable recommendation). Those slots are
+        filtered out — token usage is still accounted for.
+        """
+        pairs = [
+            (f, d) for f in bundle.items for d in f.affected_drugs
+        ]
+        if not pairs:
+            self.last_response = None
+            return Draft(cards=(), raw_text="")
+
+        n_workers = min(self.max_workers, len(pairs))
+        with ThreadPoolExecutor(max_workers=n_workers) as exe:
+            future_results = [
+                exe.submit(self._draft_one_pair, bundle, f, d)
+                for f, d in pairs
+            ]
+            results = [fut.result() for fut in future_results]
+
+        cards = tuple(r[0] for r in results if r[0] is not None)
+        per_card_responses = [r[1] for r in results]
+
+        # Aggregate ProviderResponse so the eval runner sees a single,
+        # consistent picture regardless of mode. raw_text is a marker;
+        # individual responses are not retained at this level (they
+        # were temporary per-worker).
+        self.last_response = ProviderResponse(
+            text=f"<per_card x{len(pairs)}>",
+            raw=None,
+            input_tokens=sum(r.input_tokens for r in per_card_responses),
+            output_tokens=sum(r.output_tokens for r in per_card_responses),
+            cache_read_tokens=sum(
+                r.cache_read_tokens for r in per_card_responses
+            ),
+            cache_creation_tokens=sum(
+                r.cache_creation_tokens for r in per_card_responses
+            ),
+        )
+        return Draft(cards=cards, raw_text=self.last_response.text)
+
+    def _draft_one_pair(
+        self,
+        bundle: Bundle[PGxFinding],
+        finding: PGxFinding,
+        drug: DrugRec,
+    ) -> tuple[DraftedCard | None, ProviderResponse]:
+        """Single-pair worker. Builds a one-finding-one-drug mini-bundle,
+        calls the provider, parses the single card. Used by per_card mode.
+
+        The model occasionally returns `{"cards": []}` — typically for
+        Unknown / Uncertain Susceptibility phenotypes where there's no
+        actionable CPIC recommendation. The caller filters None out.
+        """
+        mini = Bundle(
+            items=(
+                PGxFinding(
+                    gene=finding.gene,
+                    diplotype=finding.diplotype,
+                    source_variants=finding.source_variants,
+                    phenotype=finding.phenotype,
+                    phenotype_source=finding.phenotype_source,
+                    affected_drugs=(drug,),
+                    confidence=finding.confidence,
+                ),
+            ),
+            privacy_tier=bundle.privacy_tier,
+            source=bundle.source,
+            schema_version=bundle.schema_version,
+            metadata=bundle.metadata,
+        )
+        bundle_json = self._serialize_bundle(mini)
+        resp = self.provider.generate(
+            system=SYSTEM_PROMPT,
+            user=f"Bundle (JSON):\n{bundle_json}",
+            schema=OUTPUT_SCHEMA,
+            max_tokens=self.max_tokens,
+        )
+        data = json.loads(resp.text)
+        cards_data = data.get("cards") or []
+        if not cards_data:
+            return None, resp
+        c = cards_data[0]
+        card = DraftedCard(
+            gene=c["gene"],
+            diplotype=c["diplotype"],
+            phenotype=c["phenotype"],
+            drug=c["drug"],
+            recommendation=c["recommendation"],
+            cited_pmids=tuple(c["cited_pmids"]),
+        )
+        return card, resp
 
 
 class TriagingDrafter(Drafter):

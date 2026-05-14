@@ -70,12 +70,13 @@ def main() -> int:
     parser.add_argument("--skip-model", action="store_true")
     parser.add_argument("--skip-ranker", action="store_true")
     parser.add_argument("--skip-triage", action="store_true")
+    parser.add_argument("--skip-drafter-mode", action="store_true")
     parser.add_argument(
         "--only-verifier",
         action="store_true",
         help=(
             "Shortcut for --skip-model --skip-ranker --skip-triage "
-            "(zero API cost)."
+            "--skip-drafter-mode (zero API cost)."
         ),
     )
     parser.add_argument(
@@ -90,10 +91,12 @@ def main() -> int:
     )
     parser.add_argument(
         "--gemini-model",
-        default="gemini-2.0-flash",
+        default="gemini-2.5-flash-lite",
         help=(
-            "Gemini model id for Ablation B. Default `gemini-2.0-flash` "
-            "has ~75x more free-tier headroom than `gemini-2.5-flash`."
+            "Gemini model id for Ablation B. Default `gemini-2.5-flash-lite` "
+            "is the strongest variant that reliably has free-tier access "
+            "(~1000 RPD); `gemini-2.5-flash` is ~20 RPD; `gemini-2.0-flash` "
+            "is paid-only on at least some projects."
         ),
     )
     parser.add_argument(
@@ -110,6 +113,9 @@ def main() -> int:
     include_model = not (args.skip_model or args.only_verifier)
     include_ranker = not (args.skip_ranker or args.only_verifier)
     include_triage = not (args.skip_triage or args.only_verifier)
+    include_drafter_mode = not (
+        args.skip_drafter_mode or args.only_verifier
+    )
 
     providers = [
         AnthropicProvider(model=args.haiku_model),
@@ -126,6 +132,7 @@ def main() -> int:
         include_model_ablation=include_model,
         include_ranker_ablation=include_ranker,
         include_triage_ablation=include_triage,
+        include_drafter_mode_ablation=include_drafter_mode,
     )
 
     print()

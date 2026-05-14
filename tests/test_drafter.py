@@ -21,6 +21,7 @@ from pgx_digest.bundle import (
 )
 from pgx_digest.drafter import (
     AnthropicProvider,
+    DraftedCard,
     GeminiProvider,
     LLMDrafter,
     OllamaDrafter,
@@ -339,6 +340,58 @@ def test_llm_drafter_exposes_last_response() -> None:
     assert drafter.last_response.input_tokens == 12
 
 
+def test_llm_drafter_redacts_source_variants_by_default() -> None:
+    """The default redact_provenance=True strips raw variant calls from
+    the JSON payload sent to the provider. The LLM doesn't need rsids
+    or chromosomal positions to write prose; only diplotype names.
+    """
+    client = _FakeAnthropicClient(_VALID_CARDS_JSON)
+    drafter = LLMDrafter(provider=AnthropicProvider(client=client))
+    bundle = _bundle()
+    # Sanity: the bundle has variants we'd want redacted.
+    assert bundle.items[0].source_variants[0].rsid == "rs4244285"
+
+    drafter.draft(bundle)
+
+    [call] = client.messages.calls
+    user_payload = call["messages"][0]["content"]
+    assert "rs4244285" not in user_payload
+    assert "96541616" not in user_payload  # variant position
+    # But the diplotype name and gene must remain.
+    assert "*1/*2" in user_payload
+    assert "CYP2C19" in user_payload
+
+
+def test_llm_drafter_includes_variants_when_redaction_disabled() -> None:
+    """`redact_provenance=False` ships the full bundle (debug mode)."""
+    client = _FakeAnthropicClient(_VALID_CARDS_JSON)
+    drafter = LLMDrafter(
+        provider=AnthropicProvider(client=client),
+        redact_provenance=False,
+    )
+    drafter.draft(_bundle())
+
+    [call] = client.messages.calls
+    user_payload = call["messages"][0]["content"]
+    assert "rs4244285" in user_payload
+    assert "96541616" in user_payload
+
+
+def test_llm_drafter_redaction_does_not_affect_verifier() -> None:
+    """Redaction is only applied to the LLM payload. The Verifier still
+    sees the full Bundle object and can check provenance fields.
+    """
+    from pgx_digest.verifier import Verifier
+
+    client = _FakeAnthropicClient(_VALID_CARDS_JSON)
+    drafter = LLMDrafter(provider=AnthropicProvider(client=client))
+    bundle = _bundle()
+    draft = drafter.draft(bundle)
+    # The standard Verifier still passes on the resulting draft —
+    # redaction only changed what the LLM saw, not the Bundle object.
+    assert Verifier().verify(draft, bundle).passed
+
+
 def test_llm_drafter_model_property_reads_through_provider() -> None:
     drafter = LLMDrafter(
         provider=AnthropicProvider(
@@ -352,6 +405,279 @@ def test_llm_drafter_model_property_reads_through_provider() -> None:
 # ---------------------------------------------------------------------------
 # Default Drafter selection
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Per-card mode
+# ---------------------------------------------------------------------------
+
+
+def _multi_pair_bundle() -> Bundle[PGxFinding]:
+    """Two findings, total of 4 (finding, drug) pairs — per_card mode
+    should produce 4 distinct provider calls and 4 cards.
+    """
+    cyp = PGxFinding(
+        gene="CYP2C19",
+        diplotype="*1/*2",
+        source_variants=(),
+        phenotype="Intermediate Metabolizer",
+        phenotype_source="test",
+        affected_drugs=(
+            DrugRec(
+                drug="clopidogrel",
+                recommendation="Avoid use.",
+                cpic_guideline_id="CPIC-C",
+                pmids=(1,),
+                evidence_level="A",
+            ),
+            DrugRec(
+                drug="voriconazole",
+                recommendation="Choose alternative.",
+                cpic_guideline_id="CPIC-V",
+                pmids=(2,),
+                evidence_level="A",
+            ),
+        ),
+        confidence="high",
+    )
+    cyp2d6 = PGxFinding(
+        gene="CYP2D6",
+        diplotype="*1/*3",
+        source_variants=(),
+        phenotype="Intermediate Metabolizer",
+        phenotype_source="test",
+        affected_drugs=(
+            DrugRec(
+                drug="amitriptyline",
+                recommendation="Reduce dose.",
+                cpic_guideline_id="CPIC-A",
+                pmids=(3,),
+                evidence_level="B",
+            ),
+            DrugRec(
+                drug="codeine",
+                recommendation="Use alternative.",
+                cpic_guideline_id="CPIC-CO",
+                pmids=(4,),
+                evidence_level="A",
+            ),
+        ),
+        confidence="high",
+    )
+    return Bundle(
+        items=(cyp, cyp2d6),
+        privacy_tier=PrivacyTier.PUBLIC,
+        source="test",
+    )
+
+
+def _per_card_response_for(card: DraftedCard) -> str:
+    """Build a one-card JSON response that the fake provider returns."""
+    return json.dumps(
+        {
+            "cards": [
+                {
+                    "gene": card.gene,
+                    "diplotype": card.diplotype,
+                    "phenotype": card.phenotype,
+                    "drug": card.drug,
+                    "recommendation": card.recommendation,
+                    "cited_pmids": list(card.cited_pmids),
+                }
+            ]
+        }
+    )
+
+
+class _RoutingAnthropicClient:
+    """Fake Anthropic client that returns one card per pair, routed
+    by inspecting the user message content for the drug name.
+    """
+
+    def __init__(self, bundle: Bundle[PGxFinding]) -> None:
+        self._by_drug = {
+            d.drug: DraftedCard(
+                gene=f.gene,
+                diplotype=f.diplotype,
+                phenotype=f.phenotype,
+                drug=d.drug,
+                recommendation=d.recommendation,
+                cited_pmids=d.pmids,
+            )
+            for f in bundle.items
+            for d in f.affected_drugs
+        }
+        self.messages = _RoutingMessagesEndpoint(self._by_drug)
+
+
+class _RoutingMessagesEndpoint:
+    def __init__(self, by_drug: dict[str, DraftedCard]) -> None:
+        self._by_drug = by_drug
+        self.calls: list[dict[str, Any]] = []
+
+    def create(self, **kwargs: Any) -> _AnthropicMessage:
+        self.calls.append(kwargs)
+        # Find which drug this call is about (one-pair mini-bundle).
+        user_msg = kwargs["messages"][0]["content"]
+        matched = next(
+            (d for d in self._by_drug if f'"{d}"' in user_msg), None
+        )
+        if matched is None:
+            raise AssertionError(
+                f"per-card call payload didn't reference any known drug: "
+                f"{user_msg[:200]}"
+            )
+        card = self._by_drug[matched]
+        return _AnthropicMessage(
+            content=[_AnthropicBlock(text=_per_card_response_for(card))],
+            usage=_AnthropicUsage(input_tokens=11, output_tokens=22),
+        )
+
+
+def test_per_card_makes_one_call_per_pair() -> None:
+    bundle = _multi_pair_bundle()
+    client = _RoutingAnthropicClient(bundle)
+    drafter = LLMDrafter(
+        provider=AnthropicProvider(client=client),
+        mode="per_card",
+        max_workers=4,
+    )
+    draft = drafter.draft(bundle)
+    # 4 pairs total -> 4 API calls + 4 cards out.
+    assert len(client.messages.calls) == 4
+    assert len(draft.cards) == 4
+    drugs = {c.drug for c in draft.cards}
+    assert drugs == {"clopidogrel", "voriconazole", "amitriptyline", "codeine"}
+
+
+def test_per_card_each_call_sees_only_one_finding() -> None:
+    """A per-card call must not have visibility into other genes —
+    that's the privacy + cross-gene-contamination guarantee.
+    """
+    bundle = _multi_pair_bundle()
+    client = _RoutingAnthropicClient(bundle)
+    drafter = LLMDrafter(
+        provider=AnthropicProvider(client=client), mode="per_card"
+    )
+    drafter.draft(bundle)
+    for call in client.messages.calls:
+        user_msg = call["messages"][0]["content"]
+        gene_mentions = sum(
+            user_msg.count(f'"{g}"') for g in ("CYP2C19", "CYP2D6")
+        )
+        # At least one (this call's gene), but never both.
+        assert 1 <= gene_mentions
+        if "CYP2C19" in user_msg and "CYP2D6" in user_msg:
+            raise AssertionError(
+                "per-card payload mentions multiple genes — leakage!"
+            )
+
+
+def test_per_card_aggregates_usage() -> None:
+    bundle = _multi_pair_bundle()
+    client = _RoutingAnthropicClient(bundle)
+    drafter = LLMDrafter(
+        provider=AnthropicProvider(client=client), mode="per_card"
+    )
+    drafter.draft(bundle)
+    assert drafter.last_response is not None
+    # 4 calls × (11 in + 22 out) each.
+    assert drafter.last_response.input_tokens == 4 * 11
+    assert drafter.last_response.output_tokens == 4 * 22
+
+
+def test_per_card_refuses_local_only() -> None:
+    bundle = _multi_pair_bundle()
+    bundle = Bundle(
+        items=bundle.items,
+        privacy_tier=PrivacyTier.LOCAL_ONLY,
+        source=bundle.source,
+    )
+    drafter = LLMDrafter(
+        provider=AnthropicProvider(client=_FakeAnthropicClient("{}")),
+        mode="per_card",
+    )
+    with pytest.raises(PrivacyViolation):
+        drafter.draft(bundle)
+
+
+def test_per_card_handles_empty_bundle() -> None:
+    bundle = Bundle(items=(), privacy_tier=PrivacyTier.PUBLIC, source="t")
+    drafter = LLMDrafter(
+        provider=AnthropicProvider(client=_FakeAnthropicClient("{}")),
+        mode="per_card",
+    )
+    draft = drafter.draft(bundle)
+    assert draft.cards == ()
+    assert drafter.last_response is None
+
+
+def test_per_card_filters_pairs_with_empty_cards_response() -> None:
+    """The LLM may legitimately return `{"cards": []}` for some pairs
+    (e.g. Unknown/Uncertain phenotype with no actionable rec). Per-card
+    mode must filter those out, not crash.
+    """
+    bundle = _multi_pair_bundle()  # 4 pairs
+
+    class _MixedResponses:
+        """Fake client: emit a valid card for the first 3 pairs,
+        an empty-cards response for the 4th (codeine).
+        """
+
+        def __init__(self) -> None:
+            self.messages = self  # client.messages.create(...) pattern
+            self.calls: list[dict[str, Any]] = []
+
+        def create(self, **kwargs: Any) -> _AnthropicMessage:
+            self.calls.append(kwargs)
+            user_msg = kwargs["messages"][0]["content"]
+            if '"codeine"' in user_msg:
+                payload = json.dumps({"cards": []})
+            else:
+                drug = next(
+                    d
+                    for d in ("clopidogrel", "voriconazole", "amitriptyline")
+                    if f'"{d}"' in user_msg
+                )
+                payload = json.dumps(
+                    {
+                        "cards": [
+                            {
+                                "gene": "CYP2C19" if drug in ("clopidogrel", "voriconazole") else "CYP2D6",
+                                "diplotype": "*1/*2" if drug in ("clopidogrel", "voriconazole") else "*1/*3",
+                                "phenotype": "Intermediate Metabolizer",
+                                "drug": drug,
+                                "recommendation": "ok",
+                                "cited_pmids": [1],
+                            }
+                        ]
+                    }
+                )
+            return _AnthropicMessage(
+                content=[_AnthropicBlock(text=payload)],
+                usage=_AnthropicUsage(input_tokens=10, output_tokens=10),
+            )
+
+    client = _MixedResponses()
+    drafter = LLMDrafter(
+        provider=AnthropicProvider(client=client), mode="per_card"
+    )
+    draft = drafter.draft(bundle)
+    # 4 calls were made; 3 cards out, the codeine empty-response was filtered.
+    assert len(client.calls) == 4
+    assert len(draft.cards) == 3
+    assert "codeine" not in {c.drug for c in draft.cards}
+    # Usage still aggregated from all 4 calls.
+    assert drafter.last_response is not None
+    assert drafter.last_response.input_tokens == 4 * 10
+
+
+def test_per_card_default_mode_is_batch() -> None:
+    """Default mode must remain `batch` to preserve backward compatibility."""
+    drafter = LLMDrafter(
+        provider=AnthropicProvider(client=_FakeAnthropicClient("{}"))
+    )
+    assert drafter.mode == "batch"
 
 
 def test_select_drafter_picks_ollama_for_local_only() -> None:
