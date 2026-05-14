@@ -9,12 +9,17 @@ from pgx_digest.bundle import (
     Variant,
 )
 from pgx_digest.drafter import (
-    ClaudeDrafter,
+    AnthropicProvider,
     Draft,
     Drafter,
     DraftedCard,
+    GeminiProvider,
+    LLMDrafter,
     OllamaDrafter,
     PrivacyViolation,
+    Provider,
+    ProviderResponse,
+    TriagingDrafter,
     select_drafter,
 )
 from pgx_digest.pharmcat import parse_pharmcat_json
@@ -27,7 +32,8 @@ from pgx_digest.pharmcat_runner import (
     vcf_to_bundle,
 )
 from pgx_digest.pipeline import PipelineResult, run
-from pgx_digest.ranker import rank
+from pgx_digest.ranker import LLMRanker, rank
+from pgx_digest.triage import TemplateDrafter, Triage, TriageDecision
 from pgx_digest.verifier import (
     VerificationFailure,
     VerificationResult,
@@ -35,18 +41,27 @@ from pgx_digest.verifier import (
 )
 
 __all__ = [
+    "AnthropicProvider",
     "Bundle",
-    "ClaudeDrafter",
     "Draft",
     "Drafter",
     "DraftedCard",
     "DrugRec",
     "EvidenceLevel",
+    "GeminiProvider",
+    "LLMDrafter",
+    "LLMRanker",
     "OllamaDrafter",
     "PGxFinding",
     "PipelineResult",
     "PrivacyTier",
     "PrivacyViolation",
+    "Provider",
+    "ProviderResponse",
+    "TemplateDrafter",
+    "Triage",
+    "TriageDecision",
+    "TriagingDrafter",
     "VerificationFailure",
     "VerificationResult",
     "Variant",
@@ -60,4 +75,5 @@ __all__ = [
     "run",
     "run_pharmcat",
     "vcf_to_bundle",
+    "select_drafter",
 ]
