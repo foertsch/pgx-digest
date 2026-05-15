@@ -25,3 +25,8 @@ results/
 eval_results/
 rag_cache/
 *.log
+
+# 1000 Genomes fixtures are regenerated on-demand (recipe in
+# tests/fixtures/README.md). Keeping them out of the repo to avoid a
+# ~90 MB blob — the repo commits precomputed statistics instead.
+tests/fixtures/pharmcat_1kg_*.report.json
