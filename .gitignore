@@ -22,6 +22,22 @@ venv/
 
 output/
 results/
-eval_results/
+# eval_results/: timestamped ad-hoc ablation runs are gitignored, but
+# top-level final summary markdowns (`ablation_*.md`) ARE committed.
+eval_results/*/
 rag_cache/
 *.log
+
+# 1000 Genomes fixtures are regenerated on-demand (recipe in
+# tests/fixtures/README.md). Keeping them out of the repo to avoid a
+# ~90 MB blob — the repo commits precomputed statistics instead.
+tests/fixtures/pharmcat_1kg_*.report.json
+
+# NLI eval intermediates — regenerable (recipe in ablation_h writeup).
+# We commit the curated gold set (nli_gold.jsonl) and the per-pair
+# score file (ablation_h_per_pair_scores.jsonl) but not these.
+eval_data/nli_pairs.jsonl
+eval_data/nli_gold_v1.jsonl
+
+# Local dev-scratch (interactive arch prototypes, mermaid testbeds, etc.)
+prototypes/

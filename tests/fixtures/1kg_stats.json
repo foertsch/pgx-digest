@@ -1,0 +1,972 @@
+{
+  "actionable_phenotypes_per_gene": {
+    "ABCG2": {
+      "AFR": {
+        "Normal Function": 16
+      },
+      "AMR": {
+        "Decreased Function": 3,
+        "Normal Function": 8
+      },
+      "EAS": {
+        "Decreased Function": 4,
+        "Normal Function": 8,
+        "Poor Function": 1
+      },
+      "EUR": {
+        "Normal Function": 13
+      },
+      "SAS": {
+        "Decreased Function": 2,
+        "Normal Function": 10
+      }
+    },
+    "CACNA1S": {
+      "AFR": {
+        "Uncertain Susceptibility": 16
+      },
+      "AMR": {
+        "Uncertain Susceptibility": 11
+      },
+      "EAS": {
+        "Uncertain Susceptibility": 13
+      },
+      "EUR": {
+        "Uncertain Susceptibility": 13
+      },
+      "SAS": {
+        "Uncertain Susceptibility": 12
+      }
+    },
+    "CFTR": {
+      "AFR": {
+        "ivacaftor non-responsive in CF patients": 16
+      },
+      "AMR": {
+        "No Result": 1,
+        "ivacaftor non-responsive in CF patients": 10
+      },
+      "EAS": {
+        "ivacaftor non-responsive in CF patients": 13
+      },
+      "EUR": {
+        "No Result": 1,
+        "ivacaftor non-responsive in CF patients": 12
+      },
+      "SAS": {
+        "ivacaftor non-responsive in CF patients": 12
+      }
+    },
+    "CYP2B6": {
+      "AFR": {
+        "Normal Metabolizer": 16
+      },
+      "AMR": {
+        "Normal Metabolizer": 11
+      },
+      "EAS": {
+        "Normal Metabolizer": 13
+      },
+      "EUR": {
+        "Normal Metabolizer": 13
+      },
+      "SAS": {
+        "Normal Metabolizer": 12
+      }
+    },
+    "CYP2C19": {
+      "AFR": {
+        "Intermediate Metabolizer": 5,
+        "Normal Metabolizer": 5,
+        "Poor Metabolizer": 1,
+        "Rapid Metabolizer": 3,
+        "Ultrarapid Metabolizer": 2
+      },
+      "AMR": {
+        "Intermediate Metabolizer": 3,
+        "Normal Metabolizer": 5,
+        "Rapid Metabolizer": 1,
+        "Ultrarapid Metabolizer": 2
+      },
+      "EAS": {
+        "Intermediate Metabolizer": 9,
+        "Normal Metabolizer": 2,
+        "Poor Metabolizer": 2
+      },
+      "EUR": {
+        "Intermediate Metabolizer": 6,
+        "Normal Metabolizer": 5,
+        "Poor Metabolizer": 1,
+        "Rapid Metabolizer": 1
+      },
+      "SAS": {
+        "Intermediate Metabolizer": 7,
+        "Normal Metabolizer": 1,
+        "Poor Metabolizer": 2,
+        "Rapid Metabolizer": 2
+      }
+    },
+    "CYP2C9": {
+      "AFR": {
+        "Intermediate Metabolizer": 3,
+        "Normal Metabolizer": 13
+      },
+      "AMR": {
+        "Intermediate Metabolizer": 4,
+        "Normal Metabolizer": 7
+      },
+      "EAS": {
+        "Normal Metabolizer": 13
+      },
+      "EUR": {
+        "Intermediate Metabolizer": 2,
+        "Normal Metabolizer": 11
+      },
+      "SAS": {
+        "Indeterminate": 1,
+        "Intermediate Metabolizer": 4,
+        "Normal Metabolizer": 7
+      }
+    },
+    "CYP2D6": {
+      "AFR": {
+        "No Result": 16
+      },
+      "AMR": {
+        "No Result": 11
+      },
+      "EAS": {
+        "No Result": 13
+      },
+      "EUR": {
+        "No Result": 13
+      },
+      "SAS": {
+        "No Result": 12
+      }
+    },
+    "CYP3A4": {
+      "AFR": {
+        "Normal Metabolizer": 16
+      },
+      "AMR": {
+        "Intermediate Metabolizer": 2,
+        "Normal Metabolizer": 9
+      },
+      "EAS": {
+        "Intermediate Metabolizer": 1,
+        "Normal Metabolizer": 12
+      },
+      "EUR": {
+        "Intermediate Metabolizer": 1,
+        "Normal Metabolizer": 12
+      },
+      "SAS": {
+        "Normal Metabolizer": 12
+      }
+    },
+    "CYP3A5": {
+      "AFR": {
+        "Intermediate Metabolizer": 9,
+        "Normal Metabolizer": 5,
+        "Poor Metabolizer": 2
+      },
+      "AMR": {
+        "Intermediate Metabolizer": 5,
+        "Poor Metabolizer": 6
+      },
+      "EAS": {
+        "Intermediate Metabolizer": 4,
+        "Normal Metabolizer": 2,
+        "Poor Metabolizer": 7
+      },
+      "EUR": {
+        "Intermediate Metabolizer": 3,
+        "Poor Metabolizer": 10
+      },
+      "SAS": {
+        "Intermediate Metabolizer": 7,
+        "Poor Metabolizer": 5
+      }
+    },
+    "CYP4F2": {
+      "AFR": {
+        "Unknown": 16
+      },
+      "AMR": {
+        "Unknown": 11
+      },
+      "EAS": {
+        "Unknown": 13
+      },
+      "EUR": {
+        "Unknown": 13
+      },
+      "SAS": {
+        "Unknown": 12
+      }
+    },
+    "DPYD": {
+      "AFR": {
+        "Normal Metabolizer": 16
+      },
+      "AMR": {
+        "Intermediate Metabolizer": 1,
+        "Normal Metabolizer": 10
+      },
+      "EAS": {
+        "Normal Metabolizer": 13
+      },
+      "EUR": {
+        "Normal Metabolizer": 13
+      },
+      "SAS": {
+        "Intermediate Metabolizer": 1,
+        "Normal Metabolizer": 11
+      }
+    },
+    "G6PD": {
+      "AFR": {
+        "Deficient": 1,
+        "Normal": 14,
+        "Variable": 1
+      },
+      "AMR": {
+        "Normal": 11
+      },
+      "EAS": {
+        "Normal": 13
+      },
+      "EUR": {
+        "Normal": 13
+      },
+      "SAS": {
+        "Normal": 12
+      }
+    },
+    "HLA-A": {
+      "AFR": {
+        "Unknown": 16
+      },
+      "AMR": {
+        "Unknown": 11
+      },
+      "EAS": {
+        "Unknown": 13
+      },
+      "EUR": {
+        "Unknown": 13
+      },
+      "SAS": {
+        "Unknown": 12
+      }
+    },
+    "HLA-B": {
+      "AFR": {
+        "Unknown": 16
+      },
+      "AMR": {
+        "Unknown": 11
+      },
+      "EAS": {
+        "Unknown": 13
+      },
+      "EUR": {
+        "Unknown": 13
+      },
+      "SAS": {
+        "Unknown": 12
+      }
+    },
+    "IFNL3": {
+      "AFR": {
+        "n/a": 16
+      },
+      "AMR": {
+        "n/a": 11
+      },
+      "EAS": {
+        "n/a": 13
+      },
+      "EUR": {
+        "n/a": 13
+      },
+      "SAS": {
+        "n/a": 12
+      }
+    },
+    "MT-RNR1": {
+      "AFR": {
+        "No Result": 16
+      },
+      "AMR": {
+        "No Result": 11
+      },
+      "EAS": {
+        "No Result": 13
+      },
+      "EUR": {
+        "No Result": 13
+      },
+      "SAS": {
+        "No Result": 12
+      }
+    },
+    "NAT2": {
+      "AFR": {
+        "Rapid Metabolizer": 16
+      },
+      "AMR": {
+        "Rapid Metabolizer": 11
+      },
+      "EAS": {
+        "Rapid Metabolizer": 13
+      },
+      "EUR": {
+        "Rapid Metabolizer": 13
+      },
+      "SAS": {
+        "Rapid Metabolizer": 12
+      }
+    },
+    "NUDT15": {
+      "AFR": {
+        "Normal Metabolizer": 16
+      },
+      "AMR": {
+        "Normal Metabolizer": 11
+      },
+      "EAS": {
+        "Intermediate Metabolizer": 3,
+        "Normal Metabolizer": 10
+      },
+      "EUR": {
+        "Normal Metabolizer": 13
+      },
+      "SAS": {
+        "Intermediate Metabolizer": 3,
+        "Normal Metabolizer": 9
+      }
+    },
+    "RYR1": {
+      "AFR": {
+        "Uncertain Susceptibility": 16
+      },
+      "AMR": {
+        "Uncertain Susceptibility": 11
+      },
+      "EAS": {
+        "Uncertain Susceptibility": 13
+      },
+      "EUR": {
+        "Uncertain Susceptibility": 13
+      },
+      "SAS": {
+        "Uncertain Susceptibility": 12
+      }
+    },
+    "SLCO1B1": {
+      "AFR": {
+        "Decreased Function": 2,
+        "Indeterminate": 1,
+        "Normal Function": 11,
+        "Poor Function": 2
+      },
+      "AMR": {
+        "Decreased Function": 3,
+        "Normal Function": 7,
+        "Poor Function": 1
+      },
+      "EAS": {
+        "Decreased Function": 2,
+        "Normal Function": 11
+      },
+      "EUR": {
+        "Decreased Function": 6,
+        "Increased Function": 1,
+        "Normal Function": 6
+      },
+      "SAS": {
+        "Normal Function": 11,
+        "n/a": 1
+      }
+    },
+    "TPMT": {
+      "AFR": {
+        "Indeterminate": 2,
+        "Intermediate Metabolizer": 2,
+        "Normal Metabolizer": 12
+      },
+      "AMR": {
+        "Intermediate Metabolizer": 1,
+        "Normal Metabolizer": 10
+      },
+      "EAS": {
+        "Normal Metabolizer": 13
+      },
+      "EUR": {
+        "Intermediate Metabolizer": 2,
+        "Normal Metabolizer": 11
+      },
+      "SAS": {
+        "Normal Metabolizer": 12
+      }
+    },
+    "UGT1A1": {
+      "AFR": {
+        "Intermediate Metabolizer": 9,
+        "Normal Metabolizer": 3,
+        "Poor Metabolizer": 4
+      },
+      "AMR": {
+        "Intermediate Metabolizer": 5,
+        "Normal Metabolizer": 4,
+        "Poor Metabolizer": 2
+      },
+      "EAS": {
+        "Intermediate Metabolizer": 2,
+        "Normal Metabolizer": 11
+      },
+      "EUR": {
+        "Intermediate Metabolizer": 8,
+        "Normal Metabolizer": 5
+      },
+      "SAS": {
+        "Intermediate Metabolizer": 6,
+        "Normal Metabolizer": 3,
+        "Poor Metabolizer": 3
+      }
+    },
+    "VKORC1": {
+      "AFR": {
+        "-1639 GG": 16
+      },
+      "AMR": {
+        "-1639 AA": 4,
+        "-1639 AG": 1,
+        "-1639 GG": 6
+      },
+      "EAS": {
+        "-1639 AA": 10,
+        "-1639 AG": 3
+      },
+      "EUR": {
+        "-1639 AA": 2,
+        "-1639 AG": 8,
+        "-1639 GG": 3
+      },
+      "SAS": {
+        "-1639 AG": 4,
+        "-1639 GG": 8
+      }
+    }
+  },
+  "gene_coverage": {
+    "ABCG2": {
+      "actionable": 10,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "CACNA1S": {
+      "actionable": 65,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "CFTR": {
+      "actionable": 63,
+      "called": 63,
+      "coverage_pct": 96.9,
+      "total": 65
+    },
+    "CYP2B6": {
+      "actionable": 0,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "CYP2C19": {
+      "actionable": 47,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "CYP2C9": {
+      "actionable": 14,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "CYP2D6": {
+      "actionable": 0,
+      "called": 0,
+      "coverage_pct": 0.0,
+      "total": 65
+    },
+    "CYP3A4": {
+      "actionable": 4,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "CYP3A5": {
+      "actionable": 58,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "CYP4F2": {
+      "actionable": 0,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "DPYD": {
+      "actionable": 2,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "G6PD": {
+      "actionable": 65,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "HLA-A": {
+      "actionable": 0,
+      "called": 0,
+      "coverage_pct": 0.0,
+      "total": 65
+    },
+    "HLA-B": {
+      "actionable": 0,
+      "called": 0,
+      "coverage_pct": 0.0,
+      "total": 65
+    },
+    "IFNL3": {
+      "actionable": 65,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "MT-RNR1": {
+      "actionable": 0,
+      "called": 0,
+      "coverage_pct": 0.0,
+      "total": 65
+    },
+    "NAT2": {
+      "actionable": 65,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "NUDT15": {
+      "actionable": 6,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "RYR1": {
+      "actionable": 65,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "SLCO1B1": {
+      "actionable": 19,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "TPMT": {
+      "actionable": 7,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "UGT1A1": {
+      "actionable": 39,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    },
+    "VKORC1": {
+      "actionable": 32,
+      "called": 65,
+      "coverage_pct": 100.0,
+      "total": 65
+    }
+  },
+  "known_limitations": [
+    "CYP2D6: 0% coverage \u2014 known NGS limitation, requires CYP2D6-specific callers (Cyrius, Aldy) or long-read sequencing for the CYP2D6/CYP2D7 hybrids and CNVs PharmCAT needs.",
+    "HLA-A, HLA-B: 0% coverage \u2014 requires HLA-specific typing pipeline (HLA*LA, OptiType); the SNV VCF does not provide the HLA allele resolution PharmCAT needs.",
+    "MT-RNR1: 0% coverage \u2014 mitochondrial gene; chrM not included in the standard chr1\u201322 + X autosomal/sex chromosome scope."
+  ],
+  "n_samples": 65,
+  "population_distribution": {
+    "ACB": 2,
+    "ASW": 1,
+    "BEB": 6,
+    "CDX": 2,
+    "CEU": 1,
+    "CHB": 3,
+    "CHS": 2,
+    "CLM": 3,
+    "ESN": 3,
+    "FIN": 3,
+    "GBR": 3,
+    "GIH": 3,
+    "GWD": 2,
+    "IBS": 3,
+    "JPT": 3,
+    "KHV": 3,
+    "LWK": 2,
+    "MSL": 3,
+    "MXL": 4,
+    "PEL": 1,
+    "PUR": 3,
+    "STU": 3,
+    "TSI": 3,
+    "YRI": 3
+  },
+  "samples": [
+    {
+      "population": "GBR",
+      "sample_id": "HG00096",
+      "superpop": "EUR"
+    },
+    {
+      "population": "GBR",
+      "sample_id": "HG00097",
+      "superpop": "EUR"
+    },
+    {
+      "population": "GBR",
+      "sample_id": "HG00100",
+      "superpop": "EUR"
+    },
+    {
+      "population": "FIN",
+      "sample_id": "HG00271",
+      "superpop": "EUR"
+    },
+    {
+      "population": "FIN",
+      "sample_id": "HG00310",
+      "superpop": "EUR"
+    },
+    {
+      "population": "FIN",
+      "sample_id": "HG00357",
+      "superpop": "EUR"
+    },
+    {
+      "population": "CHS",
+      "sample_id": "HG00403",
+      "superpop": "EAS"
+    },
+    {
+      "population": "CHS",
+      "sample_id": "HG00404",
+      "superpop": "EAS"
+    },
+    {
+      "population": "PUR",
+      "sample_id": "HG00731",
+      "superpop": "AMR"
+    },
+    {
+      "population": "PUR",
+      "sample_id": "HG00732",
+      "superpop": "AMR"
+    },
+    {
+      "population": "PUR",
+      "sample_id": "HG00733",
+      "superpop": "AMR"
+    },
+    {
+      "population": "CLM",
+      "sample_id": "HG01112",
+      "superpop": "AMR"
+    },
+    {
+      "population": "CLM",
+      "sample_id": "HG01113",
+      "superpop": "AMR"
+    },
+    {
+      "population": "CLM",
+      "sample_id": "HG01114",
+      "superpop": "AMR"
+    },
+    {
+      "population": "IBS",
+      "sample_id": "HG01500",
+      "superpop": "EUR"
+    },
+    {
+      "population": "IBS",
+      "sample_id": "HG01501",
+      "superpop": "EUR"
+    },
+    {
+      "population": "IBS",
+      "sample_id": "HG01505",
+      "superpop": "EUR"
+    },
+    {
+      "population": "CDX",
+      "sample_id": "HG01798",
+      "superpop": "EAS"
+    },
+    {
+      "population": "CDX",
+      "sample_id": "HG01799",
+      "superpop": "EAS"
+    },
+    {
+      "population": "KHV",
+      "sample_id": "HG01840",
+      "superpop": "EAS"
+    },
+    {
+      "population": "KHV",
+      "sample_id": "HG01861",
+      "superpop": "EAS"
+    },
+    {
+      "population": "KHV",
+      "sample_id": "HG01863",
+      "superpop": "EAS"
+    },
+    {
+      "population": "PEL",
+      "sample_id": "HG01893",
+      "superpop": "AMR"
+    },
+    {
+      "population": "ACB",
+      "sample_id": "HG01894",
+      "superpop": "AFR"
+    },
+    {
+      "population": "ACB",
+      "sample_id": "HG01896",
+      "superpop": "AFR"
+    },
+    {
+      "population": "GWD",
+      "sample_id": "HG02568",
+      "superpop": "AFR"
+    },
+    {
+      "population": "GWD",
+      "sample_id": "HG02855",
+      "superpop": "AFR"
+    },
+    {
+      "population": "ESN",
+      "sample_id": "HG02922",
+      "superpop": "AFR"
+    },
+    {
+      "population": "BEB",
+      "sample_id": "HG03006",
+      "superpop": "SAS"
+    },
+    {
+      "population": "BEB",
+      "sample_id": "HG03007",
+      "superpop": "SAS"
+    },
+    {
+      "population": "BEB",
+      "sample_id": "HG03009",
+      "superpop": "SAS"
+    },
+    {
+      "population": "MSL",
+      "sample_id": "HG03052",
+      "superpop": "AFR"
+    },
+    {
+      "population": "MSL",
+      "sample_id": "HG03081",
+      "superpop": "AFR"
+    },
+    {
+      "population": "MSL",
+      "sample_id": "HG03085",
+      "superpop": "AFR"
+    },
+    {
+      "population": "ESN",
+      "sample_id": "HG03100",
+      "superpop": "AFR"
+    },
+    {
+      "population": "ESN",
+      "sample_id": "HG03351",
+      "superpop": "AFR"
+    },
+    {
+      "population": "STU",
+      "sample_id": "HG03642",
+      "superpop": "SAS"
+    },
+    {
+      "population": "STU",
+      "sample_id": "HG03644",
+      "superpop": "SAS"
+    },
+    {
+      "population": "STU",
+      "sample_id": "HG03645",
+      "superpop": "SAS"
+    },
+    {
+      "population": "BEB",
+      "sample_id": "HG04134",
+      "superpop": "SAS"
+    },
+    {
+      "population": "BEB",
+      "sample_id": "HG04135",
+      "superpop": "SAS"
+    },
+    {
+      "population": "BEB",
+      "sample_id": "HG04140",
+      "superpop": "SAS"
+    },
+    {
+      "population": "CEU",
+      "sample_id": "NA12878",
+      "superpop": "EUR"
+    },
+    {
+      "population": "YRI",
+      "sample_id": "NA18486",
+      "superpop": "AFR"
+    },
+    {
+      "population": "YRI",
+      "sample_id": "NA18505",
+      "superpop": "AFR"
+    },
+    {
+      "population": "CHB",
+      "sample_id": "NA18550",
+      "superpop": "EAS"
+    },
+    {
+      "population": "CHB",
+      "sample_id": "NA18555",
+      "superpop": "EAS"
+    },
+    {
+      "population": "CHB",
+      "sample_id": "NA18558",
+      "superpop": "EAS"
+    },
+    {
+      "population": "JPT",
+      "sample_id": "NA18939",
+      "superpop": "EAS"
+    },
+    {
+      "population": "JPT",
+      "sample_id": "NA18940",
+      "superpop": "EAS"
+    },
+    {
+      "population": "JPT",
+      "sample_id": "NA18943",
+      "superpop": "EAS"
+    },
+    {
+      "population": "LWK",
+      "sample_id": "NA19017",
+      "superpop": "AFR"
+    },
+    {
+      "population": "LWK",
+      "sample_id": "NA19020",
+      "superpop": "AFR"
+    },
+    {
+      "population": "YRI",
+      "sample_id": "NA19238",
+      "superpop": "AFR"
+    },
+    {
+      "population": "ASW",
+      "sample_id": "NA19625",
+      "superpop": "AFR"
+    },
+    {
+      "population": "MXL",
+      "sample_id": "NA19648",
+      "superpop": "AMR"
+    },
+    {
+      "population": "MXL",
+      "sample_id": "NA19649",
+      "superpop": "AMR"
+    },
+    {
+      "population": "MXL",
+      "sample_id": "NA19651",
+      "superpop": "AMR"
+    },
+    {
+      "population": "MXL",
+      "sample_id": "NA19652",
+      "superpop": "AMR"
+    },
+    {
+      "population": "TSI",
+      "sample_id": "NA20502",
+      "superpop": "EUR"
+    },
+    {
+      "population": "TSI",
+      "sample_id": "NA20506",
+      "superpop": "EUR"
+    },
+    {
+      "population": "TSI",
+      "sample_id": "NA20509",
+      "superpop": "EUR"
+    },
+    {
+      "population": "GIH",
+      "sample_id": "NA20846",
+      "superpop": "SAS"
+    },
+    {
+      "population": "GIH",
+      "sample_id": "NA20847",
+      "superpop": "SAS"
+    },
+    {
+      "population": "GIH",
+      "sample_id": "NA20849",
+      "superpop": "SAS"
+    }
+  ],
+  "source": "1000 Genomes Project NYGC 30x re-sequencing (GRCh38, 20220422_3202_phased_SNV_INDEL_SV)",
+  "superpop_distribution": {
+    "AFR": 16,
+    "AMR": 11,
+    "EAS": 13,
+    "EUR": 13,
+    "SAS": 12
+  },
+  "tool": "PharmCAT v3 (pharmcat_pipeline --absent-to-ref --reporterJson)"
+}
