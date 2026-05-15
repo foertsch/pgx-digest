@@ -19,6 +19,13 @@ dependencies = [
 dev = [
     "pytest>=8",
 ]
+# Optional: NLI-based claim-citation grounding for the Verifier.
+# Off by default; install with `uv sync --extra nli` to enable.
+# PubMedBERT-MNLI-MedNLI is ~440 MB, transformers+torch wheels ~1.5 GB.
+nli = [
+    "torch>=2.0,<3.0",
+    "transformers>=4.40,<5.0",
+]
 
 [build-system]
 requires = ["hatchling"]
