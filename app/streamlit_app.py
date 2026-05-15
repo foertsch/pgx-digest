@@ -2,14 +2,17 @@
 
 Makes the project's thesis (deterministic core, fenced LLM, typed
 Verifier) visible by attaching a verified-field badge to each card.
-The UI design goal is "clinical and calm" — recruiters should be able
-to understand the architecture from a screenshot in 10 seconds.
+
+UI ships with four named color themes spanning night→day, picked
+from the sidebar. Each theme is a set of CSS variable values plugged
+into the same static stylesheet.
 """
 
 from __future__ import annotations
 
 import os
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import streamlit as st
@@ -46,6 +49,217 @@ from lib import (  # noqa: E402  (sys.path setup above)
 FIXTURES_DIR = REPO_ROOT / "tests" / "fixtures"
 EVAL_RESULTS_DIR = REPO_ROOT / "eval_results"
 
+
+# ---------------------------------------------------------------------------
+# Color themes — spanning night→day with progressively muted accents.
+# All themes keep semantic green for verified badges; only chrome shifts.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Theme:
+    """Color set for one named theme. Plugged into CSS variables at render time."""
+
+    name: str
+    blurb: str
+    # Base surfaces (top → bottom of the page)
+    bg: str
+    bg_surface: str
+    bg_elevated: str
+    # Primary accent (purple-family in dark themes, dusty-violet in light)
+    accent: str
+    accent_light: str
+    accent_strong: str
+    # Destination highlight (orange-family — muted across all themes now)
+    highlight: str
+    highlight_light: str
+    # Text
+    text: str
+    text_muted: str
+    # Borders + decorative glows
+    border: str
+    border_strong: str
+    glow_accent: str  # rgba shadow for primary glow
+    glow_highlight: str  # rgba shadow for orange CTA hover
+    # Visual texture
+    bg_gradient: str  # CSS for radial / linear background overlays
+    # Whether to invert "code" / "monospace" green for legibility on light bg
+    is_light: bool = False
+
+
+THEMES: tuple[Theme, ...] = (
+    Theme(
+        name="Night Vision",
+        blurb="Vivid violet on near-black. Highest contrast.",
+        bg="#0A0A14",
+        bg_surface="#13131D",
+        bg_elevated="#1B1B28",
+        accent="#A78BFA",
+        accent_light="#C4B5FD",
+        accent_strong="#8B5CF6",
+        highlight="#D97757",  # toned-down burnt amber (was #FB923C)
+        highlight_light="#E8A57E",
+        text="#E5E7EB",
+        text_muted="#9CA3AF",
+        border="rgba(167, 139, 250, 0.16)",
+        border_strong="rgba(167, 139, 250, 0.32)",
+        glow_accent="rgba(124, 58, 237, 0.22)",
+        glow_highlight="rgba(217, 119, 87, 0.30)",
+        bg_gradient=(
+            "radial-gradient(ellipse at top left, "
+            "rgba(124, 58, 237, 0.10) 0%, transparent 50%), "
+            "radial-gradient(ellipse at top right, "
+            "rgba(217, 119, 87, 0.04) 0%, transparent 50%)"
+        ),
+    ),
+    Theme(
+        name="Twilight",
+        blurb="Deep plum, lavender accents, warm coral highlight.",
+        bg="#13101E",
+        bg_surface="#1D1828",
+        bg_elevated="#272235",
+        accent="#B084E0",
+        accent_light="#D0B5F0",
+        accent_strong="#9466CC",
+        highlight="#C46B5A",
+        highlight_light="#D89580",
+        text="#E5E0EC",
+        text_muted="#9590A6",
+        border="rgba(176, 132, 224, 0.16)",
+        border_strong="rgba(176, 132, 224, 0.32)",
+        glow_accent="rgba(176, 132, 224, 0.18)",
+        glow_highlight="rgba(196, 107, 90, 0.24)",
+        bg_gradient=(
+            "radial-gradient(ellipse at top left, "
+            "rgba(148, 102, 204, 0.10) 0%, transparent 55%), "
+            "radial-gradient(ellipse at bottom right, "
+            "rgba(196, 107, 90, 0.04) 0%, transparent 50%)"
+        ),
+    ),
+    Theme(
+        name="Overcast",
+        blurb="Slate-blue grey, muted lavender, dusty clay highlight.",
+        bg="#15181F",
+        bg_surface="#1F232C",
+        bg_elevated="#272C37",
+        accent="#9296BF",  # slate-lavender, low saturation
+        accent_light="#B3B8DD",
+        accent_strong="#7B82A8",
+        highlight="#B58F75",  # clay
+        highlight_light="#C9AB97",
+        text="#DDE0E8",
+        text_muted="#888EA0",
+        border="rgba(146, 150, 191, 0.18)",
+        border_strong="rgba(146, 150, 191, 0.32)",
+        glow_accent="rgba(146, 150, 191, 0.14)",
+        glow_highlight="rgba(181, 143, 117, 0.20)",
+        bg_gradient=(
+            "radial-gradient(ellipse at top, "
+            "rgba(146, 150, 191, 0.06) 0%, transparent 60%)"
+        ),
+    ),
+    Theme(
+        name="Daybreak",
+        blurb="Warm cream background, dusty violet, terracotta accents.",
+        bg="#F5F1EA",
+        bg_surface="#FFFFFF",
+        bg_elevated="#FFFFFF",
+        accent="#6B5B95",
+        accent_light="#8E7DB8",
+        accent_strong="#574A7E",
+        highlight="#B8704A",
+        highlight_light="#CC8E68",
+        text="#2A2728",
+        text_muted="#6B6770",
+        border="rgba(107, 91, 149, 0.18)",
+        border_strong="rgba(107, 91, 149, 0.32)",
+        glow_accent="rgba(107, 91, 149, 0.10)",
+        glow_highlight="rgba(184, 112, 74, 0.18)",
+        bg_gradient=(
+            "radial-gradient(ellipse at top, "
+            "rgba(107, 91, 149, 0.05) 0%, transparent 60%)"
+        ),
+        is_light=True,
+    ),
+)
+
+THEME_BY_NAME: dict[str, Theme] = {t.name: t for t in THEMES}
+
+
+def _alpha(hex_color: str, alpha: float) -> str:
+    """`#RRGGBB` + alpha → `rgba(r, g, b, a)`. Used so each theme can
+    derive its own tint values from its accent color without hardcoding
+    rgba strings everywhere.
+    """
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r}, {g}, {b}, {alpha})"
+
+
+def _theme_root_css(theme: Theme) -> str:
+    """Emit a `:root` block + background override for the chosen theme.
+
+    The static stylesheet below uses `var(--*)`; this block defines the
+    values. Switching themes is therefore zero-touch on the static CSS.
+
+    Derives per-theme tint variables (soft/medium/strong + a highlight
+    variant) from the accent colors via `_alpha()`, so card backgrounds
+    and hover states don't need hardcoded rgba in the static CSS.
+    """
+    # Text that sits on top of the (saturated) highlight color — used for
+    # the destination pill + primary-button hover. Dark text on dark
+    # themes, white on the light theme.
+    text_on_hl = "#FFFFFF" if theme.is_light else theme.bg
+    # Hero gradient starting color: white on dark themes (gradient flows
+    # white → accent → highlight); on light themes, white is invisible,
+    # so flow accent-deep → accent → highlight instead.
+    hero_grad_start = theme.accent_strong if theme.is_light else "#FFFFFF"
+    # On the light theme, Streamlit's `base=dark` config still drives
+    # widget chrome. We don't try to retheme widgets that draw their own
+    # canvas (the dataframe stays dark — acceptable contrast on cream).
+    # We just call out the light theme with a short note in the caption
+    # below the selector. Nothing to inject here.
+    light_overrides = ""
+    return f"""<style id="theme-vars">
+      :root {{
+        --bg: {theme.bg};
+        --bg-surface: {theme.bg_surface};
+        --bg-elevated: {theme.bg_elevated};
+        --accent-300: {theme.accent_light};
+        --accent-400: {theme.accent};
+        --accent-500: {theme.accent_strong};
+        --accent-600: {theme.accent_strong};
+        --accent-700: {theme.accent_strong};
+        --highlight-300: {theme.highlight_light};
+        --highlight-400: {theme.highlight};
+        --highlight-500: {theme.highlight};
+        --text: {theme.text};
+        --text-muted: {theme.text_muted};
+        --border: {theme.border};
+        --border-strong: {theme.border_strong};
+        --glow-accent: {theme.glow_accent};
+        --glow-highlight: {theme.glow_highlight};
+        --text-on-highlight: {text_on_hl};
+        --hero-grad-start: {hero_grad_start};
+        /* Accent tints, derived per-theme so each palette feels coherent */
+        --tint-soft: {_alpha(theme.accent, 0.04)};
+        --tint-medium: {_alpha(theme.accent, 0.08)};
+        --tint-strong: {_alpha(theme.accent, 0.14)};
+        --tint-highlight-soft: {_alpha(theme.highlight, 0.05)};
+        --tint-highlight-medium: {_alpha(theme.highlight, 0.10)};
+        --tint-highlight-strong: {_alpha(theme.highlight, 0.32)};
+        /* Card/tile bottom — lighter than top, used in linear-gradients */
+        --tint-faint: {_alpha(theme.accent, 0.01)};
+      }}
+      [data-testid="stAppViewContainer"] {{
+        background: {theme.bg_gradient}, var(--bg) !important;
+      }}
+      [data-testid="stAppViewContainer"] *, body {{
+        color: var(--text);
+      }}
+      {light_overrides}
+    </style>"""
+
 # ---------------------------------------------------------------------------
 # Custom CSS — tighten spacing, polish badge & card visuals
 # ---------------------------------------------------------------------------
@@ -54,25 +268,10 @@ _CUSTOM_CSS = """
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
+  /* CSS variables come from _theme_root_css(). Semantic constants stay here. */
   :root {
-    --bg: #0A0A14;
-    --bg-surface: #13131D;
-    --bg-elevated: #1B1B28;
-    --purple-100: #EDE9FE;
-    --purple-300: #C4B5FD;
-    --purple-400: #A78BFA;
-    --purple-500: #8B5CF6;
-    --purple-600: #7C3AED;
-    --purple-700: #6D28D9;
-    --orange-300: #FDBA74;
-    --orange-400: #FB923C;
-    --orange-500: #F97316;
     --green-400: #34D399;
     --red-400: #F87171;
-    --text: #E5E7EB;
-    --text-muted: #9CA3AF;
-    --border: rgba(167, 139, 250, 0.16);
-    --border-strong: rgba(167, 139, 250, 0.32);
   }
 
   /* Global body type — distinctive but readable */
@@ -91,18 +290,7 @@ _CUSTOM_CSS = """
   [data-testid="stMarkdownContainer"] a.anchor-link { display: none !important; }
   h1 > a, h2 > a, h3 > a, h4 > a, h5 > a, h6 > a { display: none !important; }
 
-  /* Subtle radial purple glow behind the hero — gives the page depth */
-  [data-testid="stAppViewContainer"] {
-    background: radial-gradient(
-      ellipse at top left,
-      rgba(124, 58, 237, 0.10) 0%,
-      transparent 50%
-    ), radial-gradient(
-      ellipse at top right,
-      rgba(251, 146, 60, 0.05) 0%,
-      transparent 50%
-    ), var(--bg) !important;
-  }
+  /* Background (radial glow + bg color) is set by _theme_root_css() per theme */
 
   /* Content frame */
   .block-container { padding-top: 3rem; max-width: 1180px; }
@@ -118,7 +306,8 @@ _CUSTOM_CSS = """
     letter-spacing: -0.03em !important;
     line-height: 1.05 !important;
     margin: 0 0 0.5rem 0 !important;
-    background: linear-gradient(110deg, #FFFFFF 0%, var(--purple-300) 60%, var(--orange-300) 100%);
+    /* `--hero-grad-start` is theme-aware: white on dark themes, accent on light */
+    background: linear-gradient(110deg, var(--hero-grad-start) 0%, var(--accent-400) 60%, var(--highlight-400) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -134,8 +323,8 @@ _CUSTOM_CSS = """
   }
   .hero-pill {
     display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(167, 139, 250, 0.10);
-    color: var(--purple-300);
+    background: var(--tint-medium);
+    color: var(--accent-300);
     padding: 4px 13px; border-radius: 999px;
     font-size: 0.78rem; letter-spacing: 0.04em;
     font-weight: 500; margin-right: 0.45rem;
@@ -144,9 +333,9 @@ _CUSTOM_CSS = """
     transition: all 0.2s ease;
   }
   .hero-pill:hover {
-    background: rgba(251, 146, 60, 0.10);
-    color: var(--orange-300);
-    border-color: rgba(251, 146, 60, 0.32);
+    background: var(--tint-highlight-medium);
+    color: var(--highlight-300);
+    border-color: var(--tint-highlight-strong);
   }
 
   /* ARCHITECTURE FLOW =================================================== */
@@ -155,9 +344,7 @@ _CUSTOM_CSS = """
     gap: 0.5rem 0.6rem;
     padding: 1.05rem 1.15rem;
     border-radius: 12px;
-    background: linear-gradient(135deg,
-      rgba(124, 58, 237, 0.08) 0%,
-      rgba(124, 58, 237, 0.03) 100%);
+    background: linear-gradient(135deg, var(--tint-medium) 0%, var(--tint-soft) 100%);
     border: 1px solid var(--border);
     backdrop-filter: blur(4px);
   }
@@ -165,30 +352,30 @@ _CUSTOM_CSS = """
     display: inline-block;
     padding: 4px 12px;
     border-radius: 6px;
-    background: rgba(167, 139, 250, 0.07);
+    background: var(--tint-medium);
     border: 1px solid var(--border);
     font-size: 0.82rem;
-    color: var(--purple-300);
+    color: var(--accent-300);
     transition: all 0.2s ease;
   }
   .arch-step:hover {
-    background: rgba(167, 139, 250, 0.14);
+    background: var(--tint-strong);
     border-color: var(--border-strong);
-    color: #FFFFFF;
+    color: var(--text);
   }
   .arch-step-final {
-    background: linear-gradient(135deg, var(--orange-500) 0%, var(--orange-400) 100%);
-    color: #0A0A14 !important;
-    border: 1px solid var(--orange-400) !important;
+    background: linear-gradient(135deg, var(--highlight-500) 0%, var(--highlight-400) 100%);
+    color: var(--text-on-highlight) !important;
+    border: 1px solid var(--highlight-400) !important;
     font-weight: 700;
-    box-shadow: 0 0 22px rgba(249, 115, 22, 0.30);
+    box-shadow: 0 0 22px var(--glow-highlight);
   }
   .arch-step-final:hover {
-    background: linear-gradient(135deg, var(--orange-400) 0%, var(--orange-300) 100%);
-    color: #0A0A14 !important;
+    background: linear-gradient(135deg, var(--highlight-400) 0%, var(--highlight-300) 100%);
+    color: var(--text-on-highlight) !important;
   }
   .arch-arrow {
-    color: var(--purple-400);
+    color: var(--accent-400);
     opacity: 0.45;
     font-size: 1rem;
     user-select: none;
@@ -202,7 +389,7 @@ _CUSTOM_CSS = """
     margin: 1.5rem 0 0.75rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--purple-400);
+    color: var(--accent-400);
     position: relative;
     padding-left: 0.7rem;
   }
@@ -211,7 +398,7 @@ _CUSTOM_CSS = """
     position: absolute; left: 0; top: 50%;
     transform: translateY(-50%);
     width: 3px; height: 60%;
-    background: linear-gradient(180deg, var(--purple-400), var(--orange-400));
+    background: linear-gradient(180deg, var(--accent-400), var(--highlight-400));
     border-radius: 2px;
   }
 
@@ -225,16 +412,12 @@ _CUSTOM_CSS = """
     padding: 0.95rem 1.05rem;
     border-radius: 10px;
     border: 1px solid var(--border);
-    background: linear-gradient(180deg,
-      rgba(167, 139, 250, 0.04) 0%,
-      rgba(167, 139, 250, 0.01) 100%);
+    background: linear-gradient(180deg, var(--tint-soft) 0%, var(--tint-faint) 100%);
     transition: all 0.25s ease;
   }
   .kpi-tile:hover {
     border-color: var(--border-strong);
-    background: linear-gradient(180deg,
-      rgba(167, 139, 250, 0.07) 0%,
-      rgba(167, 139, 250, 0.02) 100%);
+    background: linear-gradient(180deg, var(--tint-medium) 0%, var(--tint-soft) 100%);
     transform: translateY(-1px);
   }
   .kpi-label {
@@ -252,7 +435,7 @@ _CUSTOM_CSS = """
   .kpi-value-num {
     font-family: 'Space Grotesk', 'Inter', sans-serif;
     font-size: 1.65rem; font-weight: 700;
-    background: linear-gradient(135deg, var(--purple-300), var(--orange-300));
+    background: linear-gradient(135deg, var(--accent-300), var(--highlight-300));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -285,9 +468,7 @@ _CUSTOM_CSS = """
 
   /* CARDS — Streamlit st.container(border=True) wrapper */
   [data-testid="stVerticalBlockBorderWrapper"] {
-    background: linear-gradient(180deg,
-      rgba(167, 139, 250, 0.03) 0%,
-      rgba(167, 139, 250, 0.01) 100%) !important;
+    background: linear-gradient(180deg, var(--tint-soft) 0%, var(--tint-faint) 100%) !important;
     border: 1px solid var(--border) !important;
     border-radius: 12px !important;
     transition: all 0.3s ease;
@@ -297,7 +478,7 @@ _CUSTOM_CSS = """
     border-color: var(--border-strong) !important;
     box-shadow:
       0 1px 3px rgba(0, 0, 0, 0.3),
-      0 0 24px rgba(167, 139, 250, 0.10) !important;
+      0 0 24px var(--glow-accent) !important;
   }
 
   .card-rec {
@@ -308,21 +489,21 @@ _CUSTOM_CSS = """
   /* PRIMARY BUTTON (Generate verified report) */
   .stButton > button[kind="primary"],
   button[data-testid="baseButton-primary"] {
-    background: linear-gradient(135deg, var(--purple-600) 0%, var(--purple-500) 100%) !important;
+    background: linear-gradient(135deg, var(--accent-600) 0%, var(--accent-500) 100%) !important;
     color: #FFFFFF !important;
-    border: 1px solid var(--purple-400) !important;
+    border: 1px solid var(--accent-400) !important;
     font-weight: 600 !important;
     letter-spacing: 0.01em !important;
     padding: 0.55rem 1.15rem !important;
-    box-shadow: 0 0 22px rgba(124, 58, 237, 0.28) !important;
+    box-shadow: 0 0 22px var(--glow-accent) !important;
     transition: all 0.2s ease !important;
   }
   .stButton > button[kind="primary"]:hover,
   button[data-testid="baseButton-primary"]:hover {
-    background: linear-gradient(135deg, var(--orange-500) 0%, var(--orange-400) 100%) !important;
-    border-color: var(--orange-400) !important;
-    color: #0A0A14 !important;
-    box-shadow: 0 0 30px rgba(251, 146, 60, 0.40) !important;
+    background: linear-gradient(135deg, var(--highlight-500) 0%, var(--highlight-400) 100%) !important;
+    border-color: var(--highlight-400) !important;
+    color: var(--text-on-highlight) !important;
+    box-shadow: 0 0 30px var(--glow-highlight) !important;
     transform: translateY(-1px);
   }
 
@@ -333,16 +514,16 @@ _CUSTOM_CSS = """
     padding: 0.5rem 1rem;
   }
   [data-testid="stTabs"] [role="tab"][aria-selected="true"] {
-    color: var(--orange-300) !important;
+    color: var(--highlight-300) !important;
   }
   [data-testid="stTabs"] [data-baseweb="tab-highlight"] {
-    background: linear-gradient(90deg, var(--purple-400), var(--orange-400)) !important;
+    background: linear-gradient(90deg, var(--accent-400), var(--highlight-400)) !important;
     height: 3px !important;
   }
 
   /* SIDEBAR */
   [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0E0E18 0%, #0A0A14 100%) !important;
+    background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg) 100%) !important;
     border-right: 1px solid var(--border);
   }
   [data-testid="stSidebar"] h2 {
@@ -350,7 +531,7 @@ _CUSTOM_CSS = """
     font-size: 0.82rem !important;
     text-transform: uppercase;
     letter-spacing: 0.16em;
-    color: var(--purple-300);
+    color: var(--accent-300);
     margin-bottom: 1rem;
   }
 
@@ -377,10 +558,10 @@ _CUSTOM_CSS = """
     border-top: 1px solid var(--border);
   }
   .footer-note a {
-    color: var(--purple-300) !important;
+    color: var(--accent-300) !important;
   }
   .footer-note a:hover {
-    color: var(--orange-300) !important;
+    color: var(--highlight-300) !important;
   }
 
   /* Markdown headings inside Streamlit expanders — Streamlit's DOM
@@ -395,10 +576,10 @@ _CUSTOM_CSS = """
     font-size: 1.1rem !important;
     font-weight: 600 !important;
     margin: 0.5rem 0 0.75rem !important;
-    color: var(--purple-300) !important;
+    color: var(--accent-300) !important;
     letter-spacing: -0.01em !important;
     background: none !important;
-    -webkit-text-fill-color: var(--purple-300) !important;
+    -webkit-text-fill-color: var(--accent-300) !important;
     line-height: 1.3 !important;
   }
   details h2,
@@ -410,7 +591,7 @@ _CUSTOM_CSS = """
   }
   details table { font-size: 0.85rem; }
   details th {
-    color: var(--purple-300) !important;
+    color: var(--accent-300) !important;
     font-weight: 600;
     letter-spacing: 0.02em;
   }
@@ -534,9 +715,8 @@ st.set_page_config(
     page_title="pgx-digest — verified PGx reports",
     page_icon="🧬",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
-
-st.markdown(_CUSTOM_CSS, unsafe_allow_html=True)
 
 
 def _init_state() -> None:
@@ -544,9 +724,20 @@ def _init_state() -> None:
     st.session_state.setdefault("result", None)
     st.session_state.setdefault("result_fixture", None)
     st.session_state.setdefault("provider_name", "anthropic")
+    st.session_state.setdefault("theme_name", THEMES[0].name)
+    # `?theme=Twilight` URL override — handy for sharing a specific look
+    # and for headless screenshots during development.
+    qp_theme = st.query_params.get("theme")
+    if qp_theme and qp_theme in THEME_BY_NAME:
+        st.session_state.theme_name = qp_theme
 
 
 _init_state()
+
+# Inject theme variables FIRST so the static CSS below resolves them.
+_active_theme = THEME_BY_NAME.get(st.session_state.theme_name, THEMES[0])
+st.markdown(_theme_root_css(_active_theme), unsafe_allow_html=True)
+st.markdown(_CUSTOM_CSS, unsafe_allow_html=True)
 
 
 # Hero — rendered as raw HTML so .hero-title CSS scoping is unambiguous
@@ -569,9 +760,23 @@ st.markdown(ARCH_FLOW_HTML, unsafe_allow_html=True)
 st.markdown("&nbsp;", unsafe_allow_html=True)
 
 
-# Sidebar — fixture picker + provider + API key
+# Sidebar — theme + fixture picker + provider + API key
 with st.sidebar:
     st.header("Configuration")
+
+    theme_names = [t.name for t in THEMES]
+    chosen_theme_name = st.selectbox(
+        "Theme",
+        theme_names,
+        index=theme_names.index(st.session_state.theme_name),
+        help="Color palettes spanning night → day. Same UI, four moods.",
+    )
+    if chosen_theme_name != st.session_state.theme_name:
+        st.session_state.theme_name = chosen_theme_name
+        st.rerun()
+    st.caption(THEME_BY_NAME[chosen_theme_name].blurb)
+    st.divider()
+
     fixtures = find_fixtures(FIXTURES_DIR)
     if not fixtures:
         st.error(f"No fixtures found in {FIXTURES_DIR}")
