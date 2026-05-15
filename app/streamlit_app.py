@@ -337,6 +337,19 @@ _CUSTOM_CSS = """
     color: var(--highlight-300);
     border-color: var(--tint-highlight-strong);
   }
+  /* Legal / "not a medical device" pill — visually distinct from the
+     technical-thesis pills via the semantic red, so a reader can't
+     mistake it for a fourth feature. */
+  .hero-pill-warning,
+  .hero-pill-warning:hover {
+    background: rgba(248, 113, 113, 0.10);
+    color: var(--red-400);
+    border-color: rgba(248, 113, 113, 0.32);
+  }
+  .hero-pill-warning:hover {
+    background: rgba(248, 113, 113, 0.16);
+    border-color: rgba(248, 113, 113, 0.55);
+  }
 
   /* ARCHITECTURE FLOW =================================================== */
   .arch-flow {
@@ -750,6 +763,7 @@ st.markdown(
     "<span class='hero-pill'>Deterministic core</span>"
     "<span class='hero-pill'>Fenced LLM</span>"
     "<span class='hero-pill'>Typed Verifier</span>"
+    "<span class='hero-pill hero-pill-warning'>Not for clinical use</span>"
     "<br>Privacy-first pharmacogenomic narrative reports where every "
     "claim is verified against the source Bundle."
     "</div>",
@@ -893,6 +907,11 @@ with tab_try:
         st.markdown(
             "<div class='section-title'>Verified report</div>",
             unsafe_allow_html=True,
+        )
+        st.warning(
+            "**Do not use for treatment decisions.** This is a portfolio "
+            "demo — outputs are not clinical recommendations and have "
+            "not been reviewed by a healthcare professional."
         )
 
         fails_by_card: dict[int, list] = {}
