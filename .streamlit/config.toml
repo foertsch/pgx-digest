@@ -1,0 +1,18 @@
+# Streamlit theme for pgx-digest. Clinical, calm, not flashy.
+# Reference: https://docs.streamlit.io/library/advanced-features/theming
+
+[theme]
+# Deep slate-teal — reads as serious/clinical without being cold.
+primaryColor = "#0F766E"
+# Off-white background — slightly warmer than pure white.
+backgroundColor = "#FAFAF9"
+# Card / sidebar surface — subtle contrast against the bg.
+secondaryBackgroundColor = "#F1F5F4"
+textColor = "#1F2937"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+headless = true
