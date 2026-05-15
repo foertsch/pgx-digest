@@ -762,7 +762,7 @@ st.markdown(
     "<div class='hero-tagline'>"
     "<span class='hero-pill'>Deterministic core</span>"
     "<span class='hero-pill'>Fenced LLM</span>"
-    "<span class='hero-pill'>Typed Verifier</span>"
+    "<span class='hero-pill'>Token verifier</span>"
     "<span class='hero-pill hero-pill-warning'>Not for clinical use</span>"
     "<br>Privacy-first pharmacogenomic narrative reports where every "
     "claim is verified against the source Bundle."
