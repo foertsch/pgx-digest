@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>pgx-digest — interactive architecture</title>
+<style>
+  :root {
+    --bg: #0A0A14;
+    --bg-surface: #13131D;
+    --bg-elevated: #1B1B28;
+    --accent: #A78BFA;
+    --accent-light: #C4B5FD;
+    --accent-strong: #8B5CF6;
+    --highlight: #D97757;
+    --highlight-light: #E8A57E;
+    --text: #E5E7EB;
+    --text-muted: #9CA3AF;
+    --border: rgba(167, 139, 250, 0.16);
+    --border-strong: rgba(167, 139, 250, 0.32);
+    --glow-accent: rgba(124, 58, 237, 0.22);
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+  }
+  body {
+    background: radial-gradient(ellipse at top left,
+      rgba(124, 58, 237, 0.10) 0%, transparent 50%),
+      radial-gradient(ellipse at top right,
+      rgba(217, 119, 87, 0.04) 0%, transparent 50%),
+      var(--bg);
+  }
+
+  /* Header */
+  header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10, 10, 20, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 10;
+    position: relative;
+  }
+  header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.4rem; font-weight: 600;
+    margin: 0;
+    background: linear-gradient(110deg, #FFF 0%, var(--accent-light) 60%, var(--highlight-light) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  header p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin: 0.3rem 0 0;
+  }
+  header .hint {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--accent-light);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Diagram container — fills the remaining viewport */
+  #diagram-wrap {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    padding-top: 100px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  #diagram {
+    width: 95vw; height: calc(100vh - 130px);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.04) 0%, rgba(124, 58, 237, 0.01) 100%);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  #diagram svg {
+    width: 100%; height: 100%;
+    cursor: grab;
+  }
+  #diagram svg:active { cursor: grabbing; }
+
+  /* Zoom controls */
+  .controls {
+    position: absolute; bottom: 1rem; right: 1rem;
+    display: flex; flex-direction: column; gap: 0.4rem;
+    z-index: 5;
+  }
+  .controls button {
+    width: 36px; height: 36px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-strong);
+    color: var(--accent-light);
+    border-radius: 8px;
+    font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.15s;
+  }
+  .controls button:hover {
+    background: rgba(167, 139, 250, 0.14);
+    color: #FFF;
+    border-color: var(--accent);
+  }
+
+  /* Detail panel — slides in from the right on node click */
+  #detail-panel {
+    position: fixed; right: 0; top: 0; bottom: 0;
+    width: min(440px, 95vw);
+    background: var(--bg-surface);
+    border-left: 1px solid var(--border-strong);
+    transform: translateX(100%);
+    transition: transform 0.25s ease-out;
+    z-index: 20;
+    overflow-y: auto;
+    overflow-x: hidden;
+    word-wrap: break-word;
+    padding: 1.25rem 1.5rem;
+    box-shadow: -8px 0 30px rgba(0,0,0,0.4);
+    box-sizing: border-box;
+  }
+  #detail-panel.open { transform: translateX(0); }
+  #detail-panel .close-btn {
+    position: absolute; top: 1rem; right: 1rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    cursor: pointer; font-size: 1rem;
+    transition: all 0.15s;
+  }
+  #detail-panel .close-btn:hover { color: #FFF; border-color: var(--accent); }
+  #detail-panel h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.4rem; margin: 0 0 0.4rem;
+    color: var(--accent-light);
+  }
+  #detail-panel .subtitle {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 1.2rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  #detail-panel h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--highlight-light);
+    margin: 1.4rem 0 0.5rem;
+    border-left: 3px solid var(--highlight);
+    padding-left: 0.6rem;
+  }
+  #detail-panel p { line-height: 1.55; font-size: 0.93rem; margin: 0.5rem 0; }
+  #detail-panel ul { font-size: 0.9rem; line-height: 1.6; padding-left: 1.2rem; }
+  #detail-panel a {
+    color: var(--accent-light);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--border-strong);
+    transition: all 0.15s;
+  }
+  #detail-panel a:hover { color: var(--highlight-light); border-bottom-color: var(--highlight); }
+  #detail-panel code {
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(167, 139, 250, 0.08);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: var(--accent-light);
+  }
+  #detail-panel .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    margin-right: 0.3rem;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+  .badge.deterministic { background: rgba(167,139,250,0.10); color: var(--accent-light); border: 1px solid var(--border); }
+  .badge.llm           { background: rgba(217,119,87,0.10);  color: var(--highlight-light); border: 1px solid rgba(217,119,87,0.32); }
+  .badge.verified      { background: rgba(52,211,153,0.10);  color: #34D399; border: 1px solid rgba(52,211,153,0.32); }
+  .badge.ml            { background: rgba(167,139,250,0.10); color: var(--accent-light); border: 1px solid var(--border-strong); }
+
+  /* Override mermaid styles for nodes */
+  .node-clickable rect, .node-clickable polygon, .node-clickable circle {
+    cursor: pointer !important;
+    transition: filter 0.15s, stroke-width 0.15s;
+  }
+  .node-clickable:hover rect, .node-clickable:hover polygon, .node-clickable:hover circle {
+    filter: brightness(1.2);
+    stroke-width: 2.5px !important;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>pgx-digest — pipeline architecture</h1>
+  <p>Privacy-first pharmacogenomic narrative reports with verified citations.</p>
+  <div class="hint">🖱️ click any box for detail · scroll to zoom · drag to pan</div>
+</header>
+
+<div id="diagram-wrap">
+  <div id="diagram">
+    <pre class="mermaid" id="mermaid-source">
+%%{init: {'theme':'base', 'themeVariables': {
+  'fontFamily':'JetBrains Mono, monospace',
+  'fontSize':'14px',
+  'primaryColor':'#1B1B28',
+  'primaryTextColor':'#E5E7EB',
+  'primaryBorderColor':'#A78BFA',
+  'lineColor':'#A78BFA',
+  'secondaryColor':'#13131D',
+  'tertiaryColor':'#0A0A14'
+}}}%%
+flowchart LR
+  Input[/"PharmCAT JSON"/]
+  Bundle["Bundle&lt;PGxFinding&gt;"]
+  Ranker["Ranker"]
+  Triage["Triage"]
+  Drafter["LLM Drafter"]
+  Verifier["Verifier"]
+  Report(["verified report"])
+
+  Input --> Bundle
+  Bundle --> Ranker
+  Ranker --> Triage
+  Triage --> Drafter
+  Drafter --> Verifier
+  Verifier --> Report
+
+  CPIC[("CPIC corpus")] -.RAG.-> Drafter
+  PubMed[("PubMed abstracts")] -.RAG.-> Verifier
+
+  classDef deterministic fill:#1B1B28,stroke:#A78BFA,stroke-width:1.5px,color:#E5E7EB
+  classDef llmnode      fill:#1B1B28,stroke:#A78BFA,stroke-width:1.5px,color:#E5E7EB
+  classDef destination  fill:#D97757,stroke:#D97757,stroke-width:2px,color:#0A0A14
+  classDef corpus       fill:#13131D,stroke:#9CA3AF,stroke-width:1.2px,color:#9CA3AF
+
+  class Input,Bundle,Ranker,Triage,Verifier deterministic
+  class Drafter llmnode
+  class Report destination
+  class CPIC,PubMed corpus
+    </pre>
+  </div>
+
+  <div class="controls">
+    <button id="zoom-in" title="Zoom in">+</button>
+    <button id="zoom-out" title="Zoom out">−</button>
+    <button id="zoom-reset" title="Reset view">⊙</button>
+  </div>
+</div>
+
+<div id="detail-panel">
+  <button class="close-btn" aria-label="Close">×</button>
+  <div id="detail-content"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+
+<script>
+  // ---------- Per-node detail content ----------
+  const REPO = "https://github.com/foertsch/pgx-digest";
+  const DETAILS = {
+    Input: {
+      title: "PharmCAT JSON",
+      subtitle: "Upstream — out-of-scope",
+      badges: ["deterministic"],
+      body: `
+        <p>PharmCAT v3 (Docker image <code>pgkb/pharmcat</code>) takes a VCF and emits a <code>*.report.json</code> file describing every called diplotype and every CPIC-actionable drug recommendation that follows from it.</p>
+        <h3>What's in it</h3>
+        <ul>
+          <li>Per-gene diplotype calls + phenotype assignment</li>
+          <li>Per-drug recommendations referenced to CPIC guidelines</li>
+          <li>Cited PMID list per recommendation</li>
+        </ul>
+        <h3>Why this project doesn't reimplement it</h3>
+        <p>PharmCAT is already the canonical open-source PGx caller. We wrap it (<a href="${REPO}/blob/main/pgx_digest/pharmcat_runner.py">pharmcat_runner.py</a>) and parse its output.</p>
+      `,
+    },
+    Bundle: {
+      title: "Bundle⟨PGxFinding⟩",
+      subtitle: "pgx_digest/bundle.py — typed core",
+      badges: ["deterministic"],
+      body: `
+        <p>The immutable, generic data structure that flows through every stage. Every later stage reads this and re-emits a new <code>Bundle</code>, so the pipeline is fully traceable.</p>
+        <h3>Privacy-first design</h3>
+        <ul>
+          <li>Carries a <code>privacy_tier</code> field — <code>"redacted"</code> mode strips <code>source_variants</code> from the LLM payload (the Drafter never sees raw chromosomal coordinates)</li>
+          <li>Generic <code>Bundle&lt;T&gt;</code> so we can re-type as <code>Bundle&lt;RankedFinding&gt;</code> after ranking and so on</li>
+          <li>Frozen dataclasses everywhere → cheap to assert against in tests</li>
+        </ul>
+        <h3>Source</h3>
+        <p><a href="${REPO}/blob/main/pgx_digest/bundle.py">pgx_digest/bundle.py</a></p>
+      `,
+    },
+    Ranker: {
+      title: "Ranker",
+      subtitle: "pgx_digest/ranker.py — pure deterministic ordering",
+      badges: ["deterministic"],
+      body: `
+        <p>Sorts findings by clinical impact so the LLM sees the high-stakes cards first (helpful both for token-budget allocation and for output ordering on the rendered report).</p>
+        <h3>Ranking criteria, in order</h3>
+        <ul>
+          <li>Phenotype severity: PM &gt; UM &gt; IM &gt; RM &gt; Deficient &gt; Normal</li>
+          <li>Number of CPIC-actionable drugs for the gene</li>
+          <li>Alphabetical (stable, reproducible tie-break)</li>
+        </ul>
+        <p>Pure function, fully unit-tested.</p>
+      `,
+    },
+    Triage: {
+      title: "Triage",
+      subtitle: "pgx_digest/triage.py — routing layer",
+      badges: ["deterministic", "ml"],
+      body: `
+        <p>Routes each <code>(gene, drug, recommendation)</code> tuple to one of three handlers:</p>
+        <ul>
+          <li><strong>llm</strong> — needs narrative synthesis (sent to LLM Drafter)</li>
+          <li><strong>template</strong> — fits a small structured template (no LLM call)</li>
+          <li><strong>skip</strong> — no actionable info worth surfacing</li>
+        </ul>
+        <h3>Rule-based vs learned (Ablation E)</h3>
+        <p>A <code>LearnedTriage</code> embedding classifier (fastembed BGE-small + sklearn LogisticRegression) was evaluated against the rule-based version on 225 unique tuples across 69 fixtures.</p>
+        <p><strong>Result: 98.7% agreement.</strong> The learned model saved 3 LLM calls but introduced a safety-relevant regression on a rare RYR1 / succinylcholine case (skip instead of llm). Decision: <strong>rules ship</strong>; ML was not justified at the cost of edge-case regression.</p>
+        <p>Reported honestly because the negative result is the contribution. <a href="${REPO}/blob/main/pgx_digest/triage_ml.py">triage_ml.py</a> stays in the repo, documented.</p>
+      `,
+    },
+    Drafter: {
+      title: "LLM Drafter",
+      subtitle: "pgx_digest/drafter.py — the fenced LLM",
+      badges: ["llm"],
+      body: `
+        <p>The only LLM call in the pipeline. Constrained to emit valid JSON via per-provider schema enforcement.</p>
+        <h3>Provider abstraction</h3>
+        <ul>
+          <li><code>AnthropicProvider</code> — Claude Haiku 4.5 by default (~$0.001/call)</li>
+          <li><code>GeminiProvider</code> — Gemini 2.5-flash (free tier)</li>
+          <li><code>Provider</code> ABC means new backends are a one-class change</li>
+        </ul>
+        <h3>Two modes</h3>
+        <ul>
+          <li><strong>batch</strong> — one call per bundle, fast, scales to ~24 cards</li>
+          <li><strong>per_card</strong> — one call per <code>(gene, drug)</code> pair, robust to large bundles (1000G fixtures produce 50-70 cards), parallelized with ThreadPoolExecutor</li>
+        </ul>
+        <h3>Privacy</h3>
+        <p>Bundle redaction (privacy_tier=redacted) strips chromosomal coordinates before the call. The LLM sees phenotypes and drug names, never variant positions.</p>
+        <h3>RAG</h3>
+        <p>Authoritative CPIC text is retrieved per-gene and added to the prompt — the LLM doesn't synthesize from training data alone.</p>
+      `,
+    },
+    Verifier: {
+      title: "Verifier",
+      subtitle: "pgx_digest/verifier.py — the trust layer",
+      badges: ["verified"],
+      body: `
+        <p>Catches LLM hallucinations before the report leaves the pipeline. If any check fails, the draft is rejected (in production, this triggers a retry).</p>
+        <h3>Typed field checks</h3>
+        <p>Every <code>(gene, diplotype, phenotype, drug)</code> in the draft must trace back to the source <code>Bundle</code>. Mismatches → failed.</p>
+        <h3>Cross-gene prose check</h3>
+        <p>The <code>recommendation</code> field is scanned for mentions of genes not in the source bundle — catches the classic "the LLM started talking about CYP2D6 even though we only had CYP2C19" failure.</p>
+        <h3>PubMed citation grounding</h3>
+        <p>Cited PMIDs are checked for semantic consistency with the prose claim via cosine similarity over BGE-small embeddings (threshold 0.35).</p>
+        <h3>Ablation H — NLI grounding tried, failed</h3>
+        <p>Tested <code>pritamdeka/PubMedBERT-MNLI-MedNLI</code> as a learned alternative. <strong>Result: anti-correlated with gold (AUROC 0.355).</strong></p>
+        <p>Diagnosis: pre-trained NLI does strict logical entailment; clinical citation grounding requires implicit inference (phenotype mapping, "guideline endorses what guideline contains"). A 110M-param specialized model can't bridge that; an LLM can. Identified <strong>LLM-as-judge</strong> as the right next architecture. <a href="${REPO}/blob/main/eval_results/ablation_h_cosine_vs_nli.md">Full writeup →</a></p>
+      `,
+    },
+    Report: {
+      title: "verified report",
+      subtitle: "the destination",
+      badges: ["verified"],
+      body: `
+        <p>The final user-facing artifact. Each card carries per-field <strong>verified badges</strong> showing exactly what the Verifier checked.</p>
+        <h3>What a card contains</h3>
+        <ul>
+          <li>Gene, diplotype, phenotype — each tagged ✓ verified</li>
+          <li>Drug + narrative recommendation</li>
+          <li>Cited PMIDs (each linked to PubMed)</li>
+          <li>"no cross-gene leak" verified</li>
+        </ul>
+        <p>If any check failed, the card shows a red ⚠ badge with the specific failure. Draft is rejected end-to-end.</p>
+        <h3>Demo</h3>
+        <p>Live in the Streamlit app — try any of the 6 PharmCAT fixtures and click <strong>Generate verified report</strong>.</p>
+      `,
+    },
+    CPIC: {
+      title: "CPIC corpus",
+      subtitle: "pgx_digest/corpora/cpic.py — RAG source for Drafter",
+      badges: ["deterministic"],
+      body: `
+        <p>Authoritative pharmacogenomic guidelines pulled from the CPIC PostgREST API (<code>api.cpicpgx.org</code>).</p>
+        <h3>Role</h3>
+        <p>Per <code>(gene, phenotype, drug)</code> query, retrieves the actionable CPIC text and adds it to the Drafter's prompt. The LLM doesn't synthesize from training data alone — it has the authoritative reference in-context.</p>
+        <h3>Why authoritative > general</h3>
+        <p>CPIC is the canonical source for PGx dosing. Citing CPIC anchors the Drafter to current guidance, not whatever was in the model's training corpus at cutoff.</p>
+      `,
+    },
+    PubMed: {
+      title: "PubMed abstracts",
+      subtitle: "pgx_digest/corpora/pubmed.py — citation grounding source",
+      badges: ["deterministic"],
+      body: `
+        <p>NCBI eutils-fetched abstracts for every PMID the Drafter cites, cached on disk in <code>rag_cache/pubmed/</code>.</p>
+        <h3>Role</h3>
+        <p>The Verifier's PubMed grounding check loads each cited PMID's abstract and scores it against the claim text (cosine similarity, threshold 0.35).</p>
+        <h3>Why this matters</h3>
+        <p>Without this, "cited PMID" is just a string in the JSON — there's no check that the abstract actually supports the claim. The grounding check turns citations from decorations into verifiable claims.</p>
+        <h3>Ablation H</h3>
+        <p>An NLI-based alternative was evaluated and rejected (anti-correlated with gold). Cosine baseline stays. See the Verifier panel for details.</p>
+      `,
+    },
+  };
+
+  // ---------- Render mermaid, then wrap with svg-pan-zoom + click handlers ----------
+  mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+
+  async function init() {
+    const container = document.querySelector('#diagram');
+    const source = document.querySelector('#mermaid-source').textContent;
+    const { svg } = await mermaid.render('mermaid-svg-' + Date.now(), source);
+    container.innerHTML = svg;
+
+    const svgEl = container.querySelector('svg');
+    // Ensure svg fills its parent
+    svgEl.removeAttribute('height');
+    svgEl.setAttribute('width', '100%');
+    svgEl.style.height = '100%';
+
+    // Wrap with svg-pan-zoom
+    const panZoom = svgPanZoom(svgEl, {
+      zoomEnabled: true,
+      controlIconsEnabled: false,
+      fit: true, center: true,
+      minZoom: 0.4, maxZoom: 6,
+      mouseWheelZoomEnabled: true,
+      dblClickZoomEnabled: false,  // we'll use dblclick for the detail open instead
+    });
+
+    // Wire zoom buttons
+    document.getElementById('zoom-in').onclick = () => panZoom.zoomIn();
+    document.getElementById('zoom-out').onclick = () => panZoom.zoomOut();
+    document.getElementById('zoom-reset').onclick = () => { panZoom.reset(); panZoom.fit(); panZoom.center(); };
+
+    // Bind clicks: each mermaid node has id `flowchart-<NODE>-...`
+    // We grab all <g class="node"> and inspect their id attribute.
+    svgEl.querySelectorAll('g.node').forEach(g => {
+      const id = g.id;  // e.g. "flowchart-Input-12"
+      const match = id.match(/flowchart-([A-Za-z0-9_]+)-/);
+      if (!match) return;
+      const key = match[1];
+      if (!DETAILS[key]) return;
+      g.classList.add('node-clickable');
+      // Use mousedown not click so it works mid-pan; but svg-pan-zoom
+      // already swallows click during drag, so plain click is fine.
+      g.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        openDetail(key);
+      });
+    });
+  }
+
+  function openDetail(key) {
+    const d = DETAILS[key];
+    const panel = document.getElementById('detail-panel');
+    const content = document.getElementById('detail-content');
+    const badges = (d.badges || []).map(b =>
+      `<span class="badge ${b}">${b}</span>`
+    ).join(' ');
+    content.innerHTML = `
+      <h2>${d.title}</h2>
+      <div class="subtitle">${d.subtitle}</div>
+      <div>${badges}</div>
+      ${d.body}
+    `;
+    panel.classList.add('open');
+  }
+
+  document.querySelector('#detail-panel .close-btn').addEventListener('click', () => {
+    document.getElementById('detail-panel').classList.remove('open');
+  });
+
+  // Escape key closes the panel
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') {
+      document.getElementById('detail-panel').classList.remove('open');
+    }
+  });
+
+  init().catch(e => {
+    console.error(e);
+    document.getElementById('diagram').innerHTML =
+      `<div style="padding:2rem;color:#F87171">render error: ${e.message}</div>`;
+  });
+</script>
+</body>
+</html>

@@ -38,3 +38,6 @@ tests/fixtures/pharmcat_1kg_*.report.json
 # score file (ablation_h_per_pair_scores.jsonl) but not these.
 eval_data/nli_pairs.jsonl
 eval_data/nli_gold_v1.jsonl
+
+# Local dev-scratch (interactive arch prototypes, mermaid testbeds, etc.)
+prototypes/
