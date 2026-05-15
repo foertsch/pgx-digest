@@ -1,14 +1,13 @@
-# Streamlit theme for pgx-digest. Clinical, calm, not flashy.
-# Reference: https://docs.streamlit.io/library/advanced-features/theming
+# Streamlit theme for pgx-digest. Dark, purple-tinted, with orange accents
+# reserved for "destination" highlights — the final verified-report pill,
+# the primary CTA, and hover/active states.
 
 [theme]
-# Deep slate-teal — reads as serious/clinical without being cold.
-primaryColor = "#0F766E"
-# Off-white background — slightly warmer than pure white.
-backgroundColor = "#FAFAF9"
-# Card / sidebar surface — subtle contrast against the bg.
-secondaryBackgroundColor = "#F1F5F4"
-textColor = "#1F2937"
+base = "dark"
+primaryColor = "#A78BFA"
+backgroundColor = "#0A0A14"
+secondaryBackgroundColor = "#13131D"
+textColor = "#E5E7EB"
 font = "sans serif"
 
 [browser]

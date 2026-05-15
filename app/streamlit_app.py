@@ -52,91 +52,368 @@ EVAL_RESULTS_DIR = REPO_ROOT / "eval_results"
 
 _CUSTOM_CSS = """
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0A0A14;
+    --bg-surface: #13131D;
+    --bg-elevated: #1B1B28;
+    --purple-100: #EDE9FE;
+    --purple-300: #C4B5FD;
+    --purple-400: #A78BFA;
+    --purple-500: #8B5CF6;
+    --purple-600: #7C3AED;
+    --purple-700: #6D28D9;
+    --orange-300: #FDBA74;
+    --orange-400: #FB923C;
+    --orange-500: #F97316;
+    --green-400: #34D399;
+    --red-400: #F87171;
+    --text: #E5E7EB;
+    --text-muted: #9CA3AF;
+    --border: rgba(167, 139, 250, 0.16);
+    --border-strong: rgba(167, 139, 250, 0.32);
+  }
+
+  /* Global body type — distinctive but readable */
+  html, body, [class*="css"] {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  }
+  code, pre, .arch-step, .kpi-label {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace !important;
+  }
+
   /* Hide Streamlit's "Deploy" button + main menu for a portfolio-clean look */
   [data-testid="stToolbar"] { visibility: hidden; height: 0; position: fixed; }
   .stDeployButton { display: none; }
   header[data-testid="stHeader"] { background: transparent; }
   #MainMenu { visibility: hidden; }
-  /* Hide Streamlit's anchor-link icon on Markdown headers — clutter */
   [data-testid="stMarkdownContainer"] a.anchor-link { display: none !important; }
   h1 > a, h2 > a, h3 > a, h4 > a, h5 > a, h6 > a { display: none !important; }
 
-  /* Tighter overall content */
-  .block-container { padding-top: 2.5rem; max-width: 1180px; }
+  /* Subtle radial purple glow behind the hero — gives the page depth */
+  [data-testid="stAppViewContainer"] {
+    background: radial-gradient(
+      ellipse at top left,
+      rgba(124, 58, 237, 0.10) 0%,
+      transparent 50%
+    ), radial-gradient(
+      ellipse at top right,
+      rgba(251, 146, 60, 0.05) 0%,
+      transparent 50%
+    ), var(--bg) !important;
+  }
 
-  /* Hero strap line — use rgba so it reads in both light and dark mode */
-  .hero-tagline { font-size: 1.02rem; font-weight: 400; margin-top: -0.25rem;
-                  opacity: 0.78; }
-  .hero-pill { display: inline-block;
-               background: rgba(15, 118, 110, 0.12);
-               color: rgb(13, 148, 136);
-               padding: 3px 11px; border-radius: 999px;
-               font-size: 0.78rem; letter-spacing: 0.02em;
-               font-weight: 500; margin-right: 0.4rem;
-               border: 1px solid rgba(15, 118, 110, 0.28); }
+  /* Content frame */
+  .block-container { padding-top: 3rem; max-width: 1180px; }
 
-  /* Architecture flow — step pills, wraps on narrow viewports */
-  .arch-flow { display: flex; flex-wrap: wrap; align-items: center;
-               gap: 0.45rem 0.55rem; padding: 0.85rem 1rem;
-               border-radius: 8px;
-               background: rgba(15, 118, 110, 0.06);
-               border: 1px solid rgba(15, 118, 110, 0.18);
-               border-left: 3px solid #0F766E; }
-  .arch-step { display: inline-block; padding: 3px 10px;
-               border-radius: 6px;
-               background: rgba(15, 118, 110, 0.10);
-               font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-               font-size: 0.82rem; }
-  .arch-step-final { background: #0F766E; color: white; font-weight: 600; }
-  .arch-arrow { opacity: 0.45; font-size: 0.95rem; user-select: none; }
+  /* HERO ============================================================== */
+  /* Scoped to .hero-title only — see the explicit HTML render below.
+     Avoid styling all h1s globally (the ablation expanders also have
+     h1s and they'd inherit the gradient otherwise). */
+  h1.hero-title {
+    font-family: 'Space Grotesk', 'Inter', sans-serif !important;
+    font-size: 3.4rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.03em !important;
+    line-height: 1.05 !important;
+    margin: 0 0 0.5rem 0 !important;
+    background: linear-gradient(110deg, #FFFFFF 0%, var(--purple-300) 60%, var(--orange-300) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 
-  /* Compact KPI tiles (replacement for st.metric — the default is enormous) */
-  .kpi-row { display: flex; gap: 0.75rem; margin: 0.5rem 0 1.25rem; flex-wrap: wrap; }
-  .kpi-tile { flex: 1 1 0; min-width: 140px; padding: 0.7rem 0.9rem;
-              border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.22);
-              background: rgba(148, 163, 184, 0.06); }
-  .kpi-label { font-size: 0.72rem; letter-spacing: 0.04em;
-               text-transform: uppercase; opacity: 0.65; margin-bottom: 0.15rem; }
-  .kpi-value { font-size: 1.05rem; font-weight: 600;
-               font-variant-numeric: tabular-nums;
-               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .kpi-value-num { font-size: 1.35rem; }  /* short numeric values get more weight */
+  .hero-tagline {
+    color: var(--text-muted);
+    font-size: 1.04rem;
+    font-weight: 400;
+    line-height: 1.55;
+    max-width: 720px;
+    margin: 0.25rem 0 1.2rem;
+  }
+  .hero-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(167, 139, 250, 0.10);
+    color: var(--purple-300);
+    padding: 4px 13px; border-radius: 999px;
+    font-size: 0.78rem; letter-spacing: 0.04em;
+    font-weight: 500; margin-right: 0.45rem;
+    border: 1px solid var(--border);
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+  }
+  .hero-pill:hover {
+    background: rgba(251, 146, 60, 0.10);
+    color: var(--orange-300);
+    border-color: rgba(251, 146, 60, 0.32);
+  }
 
-  /* Verified badges — small pills, dark/light mode neutral */
-  .verified-badge { display: inline-flex; align-items: center; gap: 6px;
-                    padding: 3px 9px; border-radius: 999px;
-                    font-size: 0.75rem; font-weight: 500;
-                    margin: 2px 4px 2px 0; line-height: 1.2;
-                    border: 1px solid transparent; }
-  .verified-ok { background: rgba(16, 185, 129, 0.12);
-                 color: rgb(16, 185, 129);
-                 border-color: rgba(16, 185, 129, 0.32); }
-  .verified-fail { background: rgba(239, 68, 68, 0.12);
-                   color: rgb(239, 68, 68);
-                   border-color: rgba(239, 68, 68, 0.32); }
+  /* ARCHITECTURE FLOW =================================================== */
+  .arch-flow {
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 0.5rem 0.6rem;
+    padding: 1.05rem 1.15rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg,
+      rgba(124, 58, 237, 0.08) 0%,
+      rgba(124, 58, 237, 0.03) 100%);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(4px);
+  }
+  .arch-step {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(167, 139, 250, 0.07);
+    border: 1px solid var(--border);
+    font-size: 0.82rem;
+    color: var(--purple-300);
+    transition: all 0.2s ease;
+  }
+  .arch-step:hover {
+    background: rgba(167, 139, 250, 0.14);
+    border-color: var(--border-strong);
+    color: #FFFFFF;
+  }
+  .arch-step-final {
+    background: linear-gradient(135deg, var(--orange-500) 0%, var(--orange-400) 100%);
+    color: #0A0A14 !important;
+    border: 1px solid var(--orange-400) !important;
+    font-weight: 700;
+    box-shadow: 0 0 22px rgba(249, 115, 22, 0.30);
+  }
+  .arch-step-final:hover {
+    background: linear-gradient(135deg, var(--orange-400) 0%, var(--orange-300) 100%);
+    color: #0A0A14 !important;
+  }
+  .arch-arrow {
+    color: var(--purple-400);
+    opacity: 0.45;
+    font-size: 1rem;
+    user-select: none;
+  }
+
+  /* SECTION TITLE ====================================================== */
+  .section-title {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--purple-400);
+    position: relative;
+    padding-left: 0.7rem;
+  }
+  .section-title::before {
+    content: '';
+    position: absolute; left: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 3px; height: 60%;
+    background: linear-gradient(180deg, var(--purple-400), var(--orange-400));
+    border-radius: 2px;
+  }
+
+  /* KPI TILES ========================================================== */
+  .kpi-row {
+    display: flex; gap: 0.85rem;
+    margin: 0.5rem 0 1.5rem; flex-wrap: wrap;
+  }
+  .kpi-tile {
+    flex: 1 1 0; min-width: 140px;
+    padding: 0.95rem 1.05rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: linear-gradient(180deg,
+      rgba(167, 139, 250, 0.04) 0%,
+      rgba(167, 139, 250, 0.01) 100%);
+    transition: all 0.25s ease;
+  }
+  .kpi-tile:hover {
+    border-color: var(--border-strong);
+    background: linear-gradient(180deg,
+      rgba(167, 139, 250, 0.07) 0%,
+      rgba(167, 139, 250, 0.02) 100%);
+    transform: translateY(-1px);
+  }
+  .kpi-label {
+    font-size: 0.68rem; letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+  }
+  .kpi-value {
+    font-size: 1.1rem; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .kpi-value-num {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1.65rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--purple-300), var(--orange-300));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* VERIFIED BADGES — small green pills (keep semantic green) but
+     with a subtle dark-mode-friendly chrome */
+  .verified-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 11px; border-radius: 999px;
+    font-size: 0.74rem; font-weight: 500;
+    margin: 2px 4px 2px 0; line-height: 1.2;
+    transition: all 0.15s ease;
+  }
+  .verified-ok {
+    background: rgba(52, 211, 153, 0.10);
+    color: var(--green-400);
+    border: 1px solid rgba(52, 211, 153, 0.32);
+  }
+  .verified-ok:hover {
+    background: rgba(52, 211, 153, 0.16);
+    border-color: rgba(52, 211, 153, 0.55);
+  }
+  .verified-fail {
+    background: rgba(248, 113, 113, 0.10);
+    color: var(--red-400);
+    border: 1px solid rgba(248, 113, 113, 0.32);
+  }
   .verified-icon { font-weight: 700; font-size: 0.85rem; }
 
-  /* Section title — lightweight; relies on inherited text color */
-  .section-title { font-size: 1.05rem; font-weight: 600;
-                   margin: 0.25rem 0 0.6rem; letter-spacing: -0.01em;
-                   opacity: 0.95; }
+  /* CARDS — Streamlit st.container(border=True) wrapper */
+  [data-testid="stVerticalBlockBorderWrapper"] {
+    background: linear-gradient(180deg,
+      rgba(167, 139, 250, 0.03) 0%,
+      rgba(167, 139, 250, 0.01) 100%) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  [data-testid="stVerticalBlockBorderWrapper"]:hover {
+    border-color: var(--border-strong) !important;
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.3),
+      0 0 24px rgba(167, 139, 250, 0.10) !important;
+  }
 
-  /* Card recommendation prose */
-  .card-rec { line-height: 1.55; font-size: 0.94rem; opacity: 0.92; }
+  .card-rec {
+    line-height: 1.6; font-size: 0.94rem;
+    color: var(--text);
+  }
 
-  /* Footer credit */
-  .footer-note { font-size: 0.78rem; margin-top: 2.5rem;
-                 padding-top: 1rem; opacity: 0.55;
-                 border-top: 1px solid rgba(148, 163, 184, 0.22); }
+  /* PRIMARY BUTTON (Generate verified report) */
+  .stButton > button[kind="primary"],
+  button[data-testid="baseButton-primary"] {
+    background: linear-gradient(135deg, var(--purple-600) 0%, var(--purple-500) 100%) !important;
+    color: #FFFFFF !important;
+    border: 1px solid var(--purple-400) !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
+    padding: 0.55rem 1.15rem !important;
+    box-shadow: 0 0 22px rgba(124, 58, 237, 0.28) !important;
+    transition: all 0.2s ease !important;
+  }
+  .stButton > button[kind="primary"]:hover,
+  button[data-testid="baseButton-primary"]:hover {
+    background: linear-gradient(135deg, var(--orange-500) 0%, var(--orange-400) 100%) !important;
+    border-color: var(--orange-400) !important;
+    color: #0A0A14 !important;
+    box-shadow: 0 0 30px rgba(251, 146, 60, 0.40) !important;
+    transform: translateY(-1px);
+  }
 
-  /* Markdown headings inside Streamlit expanders (e.g. ablation tables
-     that start with "# Ablation X: …") — Streamlit renders these as
-     real <h1> and they dominate the page. Scope them down. */
-  [data-testid="stExpanderDetails"] h1 { font-size: 1.15rem !important;
-                                          font-weight: 600 !important;
-                                          margin: 0.4rem 0 0.6rem !important; }
-  [data-testid="stExpanderDetails"] h2 { font-size: 1.0rem !important;
-                                          font-weight: 600 !important; }
+  /* TABS — make the active tab pop with a purple underline */
+  [data-testid="stTabs"] [role="tab"] {
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    padding: 0.5rem 1rem;
+  }
+  [data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+    color: var(--orange-300) !important;
+  }
+  [data-testid="stTabs"] [data-baseweb="tab-highlight"] {
+    background: linear-gradient(90deg, var(--purple-400), var(--orange-400)) !important;
+    height: 3px !important;
+  }
+
+  /* SIDEBAR */
+  [data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0E0E18 0%, #0A0A14 100%) !important;
+    border-right: 1px solid var(--border);
+  }
+  [data-testid="stSidebar"] h2 {
+    font-family: 'Space Grotesk', 'Inter', sans-serif !important;
+    font-size: 0.82rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--purple-300);
+    margin-bottom: 1rem;
+  }
+
+  /* DATAFRAME — soften the harsh table look */
+  [data-testid="stDataFrame"] {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  /* SUCCESS / ERROR banners */
+  [data-testid="stAlert"][data-baseweb="notification"] {
+    border-radius: 10px !important;
+    border: 1px solid var(--border) !important;
+  }
+
+  /* FOOTER */
+  .footer-note {
+    font-size: 0.78rem;
+    margin-top: 3.5rem;
+    padding-top: 1.25rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    border-top: 1px solid var(--border);
+  }
+  .footer-note a {
+    color: var(--purple-300) !important;
+  }
+  .footer-note a:hover {
+    color: var(--orange-300) !important;
+  }
+
+  /* Markdown headings inside Streamlit expanders — Streamlit's DOM
+     uses several variants of expander-detail wrappers; cover them all.
+     Important: any h1 NOT marked as `.hero-title` should be small. */
+  details h1,
+  [data-testid="stExpanderDetails"] h1,
+  [data-testid="stExpander"] h1,
+  .streamlit-expander h1,
+  div[data-testid="stExpanderContent"] h1 {
+    font-family: 'Space Grotesk', 'Inter', sans-serif !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    margin: 0.5rem 0 0.75rem !important;
+    color: var(--purple-300) !important;
+    letter-spacing: -0.01em !important;
+    background: none !important;
+    -webkit-text-fill-color: var(--purple-300) !important;
+    line-height: 1.3 !important;
+  }
+  details h2,
+  [data-testid="stExpanderDetails"] h2,
+  [data-testid="stExpander"] h2,
+  .streamlit-expander h2 {
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+  }
+  details table { font-size: 0.85rem; }
+  details th {
+    color: var(--purple-300) !important;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
 </style>
 """
 
@@ -272,8 +549,11 @@ def _init_state() -> None:
 _init_state()
 
 
-# Hero
-st.title("pgx-digest")
+# Hero — rendered as raw HTML so .hero-title CSS scoping is unambiguous
+st.markdown(
+    "<h1 class='hero-title'>pgx-digest</h1>",
+    unsafe_allow_html=True,
+)
 st.markdown(
     "<div class='hero-tagline'>"
     "<span class='hero-pill'>Deterministic core</span>"
